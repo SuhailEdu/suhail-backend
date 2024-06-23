@@ -2,8 +2,11 @@ package main
 
 import (
 	"database/sql"
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
+	_ "github.com/lib/pq"
 	"log"
+	"os"
 )
 
 type Config struct {
@@ -13,8 +16,14 @@ type Config struct {
 
 func main() {
 
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	// create the db connection
-	db, err := sql.Open("postgres", "postgres://peter:password@localhost:5432/suhail")
+	dbUrl := os.Getenv("DATABASE_URL")
+	db, err := sql.Open("postgres", dbUrl)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -25,9 +34,7 @@ func main() {
 
 	e := echo.New()
 
-	registerApiRoutes(e, config)
-
-	//config(e)
+	RegisterApiRoutes(e, config)
 
 	e.Logger.Fatal(e.Start(":1323"))
 }
