@@ -7,36 +7,38 @@ package schema
 
 import (
 	"context"
-	"time"
-
-	"github.com/google/uuid"
 )
+
+const checkEmailUniqueness = `-- name: CheckEmailUniqueness :one
+SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)
+`
+
+func (q *Queries) CheckEmailUniqueness(ctx context.Context, email string) (bool, error) {
+	row := q.db.QueryRowContext(ctx, checkEmailUniqueness, email)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users(id , first_name , last_name , password , email ,  created_at , updated_at)
-VALUES ($1 , $2 , $3 , $4 , $5 , $6 , $7)
+VALUES (uuid_generate_v4() , $1 , $2 , $3 , $4 , current_timestamp , current_timestamp)
 RETURNING id, first_name, last_name, email, password, email_verified_at, created_at, updated_at
 `
 
 type CreateUserParams struct {
-	ID        uuid.UUID
 	FirstName string
 	LastName  string
 	Password  []byte
 	Email     string
-	CreatedAt time.Time
-	UpdatedAt time.Time
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	row := q.db.QueryRowContext(ctx, createUser,
-		arg.ID,
 		arg.FirstName,
 		arg.LastName,
 		arg.Password,
 		arg.Email,
-		arg.CreatedAt,
-		arg.UpdatedAt,
 	)
 	var i User
 	err := row.Scan(

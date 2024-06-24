@@ -2,6 +2,8 @@ package main
 
 import (
 	"database/sql"
+	"github.com/SuhailEdu/suhail-backend/internal/database/schema"
+	_ "github.com/SuhailEdu/suhail-backend/internal/database/schema"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
@@ -10,7 +12,7 @@ import (
 )
 
 type Config struct {
-	db     *sql.DB
+	db     *schema.Queries
 	logger *log.Logger
 }
 
@@ -23,13 +25,15 @@ func main() {
 
 	// create the db connection
 	dbUrl := os.Getenv("DATABASE_URL")
-	db, err := sql.Open("postgres", dbUrl)
+	connection, err := sql.Open("postgres", dbUrl)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	queries := schema.New(connection)
+
 	config := &Config{
-		db: db,
+		db: queries,
 	}
 
 	e := echo.New()
