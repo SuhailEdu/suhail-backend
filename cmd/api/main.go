@@ -38,7 +38,7 @@ func main() {
 
 	e := echo.New()
 
-	RegisterApiRoutes(e, config)
+	registerApiRoutes(e, config)
 
 	e.Logger.Fatal(e.Start(":1323"))
 }

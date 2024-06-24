@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func RegisterApiRoutes(e *echo.Echo, config *Config) {
+func registerApiRoutes(e *echo.Echo, config *Config) {
 
 	authGroup := e.Group("auth")
 
@@ -14,6 +14,8 @@ func RegisterApiRoutes(e *echo.Echo, config *Config) {
 
 	homeGroup := e.Group("/home")
 	homeGroup.Use(config.checkAuthToken)
+
+	homeGroup.POST("/exams/create", config.createExam)
 
 	homeGroup.GET("/hello", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")

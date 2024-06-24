@@ -6,10 +6,39 @@ package schema
 
 import (
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+type Exam struct {
+	ID               uuid.UUID
+	UserID           uuid.UUID
+	Title            string
+	Slug             sql.NullString
+	VisibilityStatus string
+	IsAccessable     sql.NullBool
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+}
+
+type ExamParticipant struct {
+	UserID    uuid.UUID
+	ExamID    uuid.UUID
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
+type ExamQuestion struct {
+	ID        uuid.UUID
+	ExamID    uuid.UUID
+	Question  string
+	Answers   json.RawMessage
+	Type      string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
 
 type Token struct {
 	Hash   []byte
