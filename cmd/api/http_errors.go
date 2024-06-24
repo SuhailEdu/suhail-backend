@@ -28,3 +28,8 @@ func validationError(c echo.Context, err interface{}) error {
 	errors := map[string]interface{}{"validationError": err}
 	return c.JSON(http.StatusUnprocessableEntity, errors)
 }
+func unAuthorizedError(c echo.Context, err interface{}) error {
+
+	errors := map[string]interface{}{"error": err}
+	return c.JSON(http.StatusUnauthorized, errors)
+}

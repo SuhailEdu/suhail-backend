@@ -12,17 +12,6 @@ import (
 	"github.com/google/uuid"
 )
 
-const checkTokenIsValid = `-- name: CheckTokenIsValid :one
-SELECT EXISTS(SELECT 1 FROM tokens WHERE hash = $1 AND expiry > now())
-`
-
-func (q *Queries) CheckTokenIsValid(ctx context.Context, hash []byte) (bool, error) {
-	row := q.db.QueryRowContext(ctx, checkTokenIsValid, hash)
-	var exists bool
-	err := row.Scan(&exists)
-	return exists, err
-}
-
 const createUserToken = `-- name: CreateUserToken :one
 INSERT INTO tokens(hash , user_id , expiry , scope )
 VALUES ( $1 , $2 , $3 , $4 )
@@ -43,6 +32,22 @@ func (q *Queries) CreateUserToken(ctx context.Context, arg CreateUserTokenParams
 		arg.Expiry,
 		arg.Scope,
 	)
+	var i Token
+	err := row.Scan(
+		&i.Hash,
+		&i.UserID,
+		&i.Expiry,
+		&i.Scope,
+	)
+	return i, err
+}
+
+const getUserToken = `-- name: GetUserToken :one
+SELECT hash, user_id, expiry, scope FROM tokens WHERE hash = $1
+`
+
+func (q *Queries) GetUserToken(ctx context.Context, hash []byte) (Token, error) {
+	row := q.db.QueryRowContext(ctx, getUserToken, hash)
 	var i Token
 	err := row.Scan(
 		&i.Hash,
