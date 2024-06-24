@@ -16,16 +16,61 @@ import (
 	"time"
 )
 
-type validationSchema struct {
+type registrationSchema struct {
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	Email     string `json:"email"`
 	Password  string `json:"password"`
 }
 
+type loginSchema struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+func (config *Config) loginUser(c echo.Context) error {
+
+	var userInput loginSchema
+
+	rules := govalidator.MapData{
+		"email":    []string{"required", "min:4", "max:20", "email"},
+		"password": []string{"required", "min:8", "max:20"},
+	}
+
+	opts := govalidator.Options{
+		Request: c.Request(), // request object
+		Rules:   rules,       // rules map
+		Data:    &userInput,
+	}
+	// Create a new validator instance
+	v := govalidator.New(opts)
+	e := v.ValidateJSON()
+
+	if len(e) > 0 {
+
+		return validationError(c, e)
+	}
+
+	user, err := config.db.GetUserByEmail(c.Request().Context(), userInput.Email)
+	if err != nil {
+		return validationError(c, map[string]any{"email": []string{"Incorrect credentials"}})
+	}
+
+	if err := bcrypt.CompareHashAndPassword(user.Password, []byte(userInput.Password)); err != nil {
+		return validationError(c, map[string]any{"email": []string{"Incorrect credentials"}})
+	}
+
+	authToken, err := createUserToken(user, c, *config)
+
+	if err != nil {
+		return serverError(c, err)
+	}
+
+	return c.JSON(http.StatusOK, serializeUserResource(user, authToken))
+}
 func (config *Config) registerUser(c echo.Context) error {
 
-	var userInput validationSchema
+	var userInput registrationSchema
 
 	rules := govalidator.MapData{
 		"first_name": []string{"required", "between:3,12"},
@@ -103,7 +148,7 @@ func createUserToken(user schema.User, c echo.Context, config Config) (string, e
 		return "", err
 	}
 
-	plainText := base32.StdEncoding.EncodeToString(randomBytes)
+	plainText := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(randomBytes)
 
 	hash := sha256.Sum256([]byte(plainText))
 

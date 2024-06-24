@@ -25,5 +25,6 @@ func validationError(c echo.Context, err interface{}) error {
 
 	log.Println(err)
 
-	return c.JSON(http.StatusUnprocessableEntity, err)
+	errors := map[string]interface{}{"validationError": err}
+	return c.JSON(http.StatusUnprocessableEntity, errors)
 }
