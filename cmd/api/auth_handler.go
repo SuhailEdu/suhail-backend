@@ -1,6 +1,9 @@
 package main
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base32"
 	"github.com/SuhailEdu/suhail-backend/internal/database/schema"
 	_ "github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -10,6 +13,7 @@ import (
 	_ "golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
+	"time"
 )
 
 type validationSchema struct {
@@ -72,11 +76,13 @@ func (config *Config) registerUser(c echo.Context) error {
 
 	createdUser, err := config.db.CreateUser(c.Request().Context(), userSchema)
 
+	authToken, err := createUserToken(createdUser, c, *config)
+
 	if err != nil {
 		return serverError(c, err)
 	}
 
-	return c.JSON(http.StatusOK, serializeUserResource(createdUser))
+	return c.JSON(http.StatusOK, serializeUserResource(createdUser, authToken))
 }
 
 func checkEmailIsUnique(c echo.Context, config Config, email string) bool {
@@ -84,5 +90,33 @@ func checkEmailIsUnique(c echo.Context, config Config, email string) bool {
 	isUsed, _ := config.db.CheckEmailUniqueness(c.Request().Context(), email)
 
 	return isUsed
+
+}
+
+func createUserToken(user schema.User, c echo.Context, config Config) (string, error) {
+
+	randomBytes := make([]byte, 16)
+
+	// Create empty byte string
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		return "", err
+	}
+
+	plainText := base32.StdEncoding.EncodeToString(randomBytes)
+
+	hash := sha256.Sum256([]byte(plainText))
+
+	_, err = config.db.CreateUserToken(c.Request().Context(), schema.CreateUserTokenParams{
+		Hash:   hash[:],
+		UserID: user.ID,
+		Expiry: time.Now().Add(30 * time.Minute),
+		Scope:  "login",
+	})
+
+	if err != nil {
+		return "", err
+	}
+	return plainText, nil
 
 }
