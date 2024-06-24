@@ -13,6 +13,22 @@ import (
 	"github.com/google/uuid"
 )
 
+const checkExamTitleExists = `-- name: CheckExamTitleExists :one
+SELECT EXISTS(SELECT 1 FROM exams WHERE title = $1 AND user_id = $2)
+`
+
+type CheckExamTitleExistsParams struct {
+	Title  string
+	UserID uuid.UUID
+}
+
+func (q *Queries) CheckExamTitleExists(ctx context.Context, arg CheckExamTitleExistsParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, checkExamTitleExists, arg.Title, arg.UserID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const createExam = `-- name: CreateExam :one
 INSERT INTO exams(id , user_id , title , slug , visibility_status , is_accessable,  created_at , updated_at)
 VALUES (uuid_generate_v4() , $1 , $2 , $3 , $4 ,$5 ,  current_timestamp , current_timestamp)

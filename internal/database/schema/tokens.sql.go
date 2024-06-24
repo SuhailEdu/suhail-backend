@@ -42,6 +42,23 @@ func (q *Queries) CreateUserToken(ctx context.Context, arg CreateUserTokenParams
 	return i, err
 }
 
+const getUserByToken = `-- name: GetUserByToken :one
+SELECT users.id,tokens.hash , tokens.expiry  FROM tokens INNER JOIN users ON users.id = tokens.user_id WHERE hash = $1
+`
+
+type GetUserByTokenRow struct {
+	ID     uuid.UUID
+	Hash   []byte
+	Expiry time.Time
+}
+
+func (q *Queries) GetUserByToken(ctx context.Context, hash []byte) (GetUserByTokenRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserByToken, hash)
+	var i GetUserByTokenRow
+	err := row.Scan(&i.ID, &i.Hash, &i.Expiry)
+	return i, err
+}
+
 const getUserToken = `-- name: GetUserToken :one
 SELECT hash, user_id, expiry, scope FROM tokens WHERE hash = $1
 `

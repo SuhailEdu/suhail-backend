@@ -1,12 +1,15 @@
 package main
 
 import (
+	"fmt"
+	"github.com/SuhailEdu/suhail-backend/internal/database/schema"
 	_ "github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"github.com/thedevsaddam/govalidator"
 	_ "github.com/thedevsaddam/govalidator"
 	_ "golang.org/x/crypto/bcrypt"
 	"net/http"
+	"reflect"
 )
 
 type Option struct {
@@ -56,20 +59,20 @@ func (config *Config) createExam(c echo.Context) error {
 		return validationError(c, e)
 	}
 
-	//return c.JSON(http.StatusCreated, examSchema.Questions)
+	authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
 
-	//questions, ok := examSchema.Questions.([]Question)
-	//
-	//if !ok {
-	//	fmt.Println(examSchema.Questions)
-	//	//return validationError(c, "Hi")
-	//	return validationError(c, map[string]interface{}{
-	//		"questions": "Exam questions are invalid.",
-	//	})
-	//}
+	examTitleExists, _ := config.db.CheckExamTitleExists(c.Request().Context(), schema.CheckExamTitleExistsParams{
+		Title:  examSchema.ExamTitle,
+		UserID: authenticatedUser.ID,
+	})
+	if examTitleExists {
+		return validationError(c, map[string]interface{}{
+			"exam_title": "You already have an exam with this title.",
+		})
+
+	}
 
 	isCorrect, questionErrors := validateQuestions(examSchema.Questions)
-	//
 	if !isCorrect {
 		return validationError(c, map[string]interface{}{
 			"questions": questionErrors,
@@ -82,6 +85,8 @@ func (config *Config) createExam(c echo.Context) error {
 func validateQuestions(questionsInput []Question) (bool, interface{}) {
 
 	for i, question := range questionsInput {
+
+		//validate question title
 		if question.Title == "" {
 			return false, QuestionValidationResponse{
 				QuestionIndex:   i,
@@ -107,6 +112,7 @@ func validateQuestions(questionsInput []Question) (bool, interface{}) {
 			}
 		}
 
+		//validate options length
 		if len(question.Options) < 2 || len(question.Options) > 4 {
 			return false, QuestionValidationResponse{
 				QuestionIndex:   i,
@@ -115,6 +121,26 @@ func validateQuestions(questionsInput []Question) (bool, interface{}) {
 			}
 
 		}
+
+		//validate single correct option
+		correctOptionFound := false
+		for optionIndex, option := range question.Options {
+			if option.IsCorrect {
+				if correctOptionFound {
+					return false, QuestionValidationResponse{
+						QuestionIndex:   i,
+						IsQuestionError: false,
+						OptionIndex:     optionIndex,
+						Message:         "question should have only one correct option",
+					}
+				}
+
+				correctOptionFound = true
+			}
+
+		}
+
+		var optionsTitles []string
 
 		for o, option := range question.Options {
 			if option.Option == "" {
@@ -144,9 +170,43 @@ func validateQuestions(questionsInput []Question) (bool, interface{}) {
 					Message:         "Question option title should be less than 60 characters",
 				}
 			}
+			optionsTitles = append(optionsTitles, option.Option)
+		}
 
+		if !isSliceUnique(optionsTitles) {
+			return false, QuestionValidationResponse{
+				QuestionIndex:   i,
+				IsQuestionError: true,
+				Message:         "Question option titles must be unique",
+			}
 		}
 	}
 
+	//validate questions titles uniqueness
+	var titles []string
+
+	for _, q := range questionsInput {
+		titles = append(titles, q.Title)
+	}
+
+	if !isSliceUnique(titles) {
+		return false, "question titles must be unique"
+	}
+
 	return true, nil
+}
+
+func isSliceUnique(input []string) bool {
+
+	set := make(map[string]interface{})
+	for _, element := range input {
+		set[element] = struct {
+		}{}
+	}
+
+	uniqueTitles := reflect.ValueOf(set).MapKeys()
+
+	fmt.Println(len(uniqueTitles), len(input))
+
+	return len(uniqueTitles) == len(input)
 }

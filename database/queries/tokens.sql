@@ -6,3 +6,6 @@ RETURNING *;
 
 -- name: GetUserToken :one
 SELECT * FROM tokens WHERE hash = $1 ;
+
+-- name: GetUserByToken :one
+SELECT users.id,tokens.hash , tokens.expiry  FROM tokens INNER JOIN users ON users.id = tokens.user_id WHERE hash = $1;

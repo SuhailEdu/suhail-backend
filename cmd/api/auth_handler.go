@@ -155,7 +155,7 @@ func createUserToken(user schema.User, c echo.Context, config Config) (string, e
 	_, err = config.db.CreateUserToken(c.Request().Context(), schema.CreateUserTokenParams{
 		Hash:   hash[:],
 		UserID: user.ID,
-		Expiry: time.Now().Add(30 * time.Minute),
+		Expiry: time.Now().Add(24 * time.Hour),
 		Scope:  "login",
 	})
 

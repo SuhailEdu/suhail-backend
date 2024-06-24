@@ -13,3 +13,7 @@ SELECT * FROM exams WHERE id = $1;
 
 -- name: GetUserExams :many
 SELECT * FROM exams WHERE user_id = $1;
+
+
+-- name: CheckExamTitleExists :one
+SELECT EXISTS(SELECT 1 FROM exams WHERE title = $1 AND user_id = $2);
