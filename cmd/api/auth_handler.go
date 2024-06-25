@@ -5,8 +5,8 @@ import (
 	"crypto/sha256"
 	"encoding/base32"
 	"fmt"
-	"github.com/SuhailEdu/suhail-backend/internal"
 	"github.com/SuhailEdu/suhail-backend/internal/database/schema"
+	"github.com/SuhailEdu/suhail-backend/internal/types"
 	_ "github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v4"
@@ -70,7 +70,7 @@ func (config *Config) loginUser(c echo.Context) error {
 	}
 
 	fmt.Println("And here")
-	return c.JSON(http.StatusOK, internal.SerializeUserResource(user, authToken))
+	return c.JSON(http.StatusOK, types.SerializeUserResource(user, authToken))
 }
 func (config *Config) registerUser(c echo.Context) error {
 
@@ -131,7 +131,7 @@ func (config *Config) registerUser(c echo.Context) error {
 		return serverError(c, err)
 	}
 
-	return c.JSON(http.StatusOK, internal.SerializeUserResource(createdUser, authToken))
+	return c.JSON(http.StatusOK, types.SerializeUserResource(createdUser, authToken))
 }
 
 func checkEmailIsUnique(c echo.Context, config Config, email string) bool {

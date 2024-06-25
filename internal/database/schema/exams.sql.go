@@ -28,8 +28,8 @@ func (q *Queries) CheckExamTitleExists(ctx context.Context, arg CheckExamTitleEx
 }
 
 const createExam = `-- name: CreateExam :one
-INSERT INTO exams(id , user_id , title , slug , visibility_status , is_accessable,  created_at , updated_at)
-VALUES (uuid_generate_v4() , $1 , $2 , $3 , $4 ,$5 ,  current_timestamp , current_timestamp)
+INSERT INTO exams(id, user_id, title, slug, visibility_status, is_accessable, created_at, updated_at)
+VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5, current_timestamp, current_timestamp)
 RETURNING id, user_id, title, slug, visibility_status, is_accessable, created_at, updated_at
 `
 
@@ -71,7 +71,9 @@ type CreateExamQuestionsParams struct {
 }
 
 const getExamById = `-- name: GetExamById :one
-SELECT id, user_id, title, slug, visibility_status, is_accessable, created_at, updated_at FROM exams WHERE id = $1
+SELECT id, user_id, title, slug, visibility_status, is_accessable, created_at, updated_at
+FROM exams
+WHERE id = $1
 `
 
 func (q *Queries) GetExamById(ctx context.Context, id pgtype.UUID) (Exam, error) {
@@ -91,7 +93,9 @@ func (q *Queries) GetExamById(ctx context.Context, id pgtype.UUID) (Exam, error)
 }
 
 const getExamQuestions = `-- name: GetExamQuestions :many
-SELECT id, exam_id, question, answers, type, created_at, updated_at FROM exam_questions WHERE exam_id = $1
+SELECT id, exam_id, question, answers, type, created_at, updated_at
+FROM exam_questions
+WHERE exam_id = $1
 `
 
 func (q *Queries) GetExamQuestions(ctx context.Context, examID pgtype.UUID) ([]ExamQuestion, error) {
@@ -123,18 +127,35 @@ func (q *Queries) GetExamQuestions(ctx context.Context, examID pgtype.UUID) ([]E
 }
 
 const getUserExams = `-- name: GetUserExams :many
-SELECT id, user_id, title, slug, visibility_status, is_accessable, created_at, updated_at FROM exams WHERE user_id = $1
+SELECT exams.id, exams.user_id, exams.title, exams.slug, exams.visibility_status, exams.is_accessable, exams.created_at, exams.updated_at, COUNT(exam_questions.*) as questions_count
+FROM exams
+         LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
+WHERE user_id = $1
+GROUP BY exams.id
+ORDER BY exams.created_at DESC
 `
 
-func (q *Queries) GetUserExams(ctx context.Context, userID pgtype.UUID) ([]Exam, error) {
+type GetUserExamsRow struct {
+	ID               pgtype.UUID
+	UserID           pgtype.UUID
+	Title            string
+	Slug             pgtype.Text
+	VisibilityStatus string
+	IsAccessable     pgtype.Bool
+	CreatedAt        pgtype.Timestamp
+	UpdatedAt        pgtype.Timestamp
+	QuestionsCount   int64
+}
+
+func (q *Queries) GetUserExams(ctx context.Context, userID pgtype.UUID) ([]GetUserExamsRow, error) {
 	rows, err := q.db.Query(ctx, getUserExams, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Exam
+	var items []GetUserExamsRow
 	for rows.Next() {
-		var i Exam
+		var i GetUserExamsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,
@@ -144,6 +165,68 @@ func (q *Queries) GetUserExams(ctx context.Context, userID pgtype.UUID) ([]Exam,
 			&i.IsAccessable,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.QuestionsCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUserExamsWithQuestions = `-- name: GetUserExamsWithQuestions :many
+SELECT exams.id, user_id, title, slug, visibility_status, is_accessable, exams.created_at, exams.updated_at, exam_questions.id, exam_id, question, answers, type, exam_questions.created_at, exam_questions.updated_at
+FROM exams
+         LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
+WHERE user_id = $1
+`
+
+type GetUserExamsWithQuestionsRow struct {
+	ID               pgtype.UUID
+	UserID           pgtype.UUID
+	Title            string
+	Slug             pgtype.Text
+	VisibilityStatus string
+	IsAccessable     pgtype.Bool
+	CreatedAt        pgtype.Timestamp
+	UpdatedAt        pgtype.Timestamp
+	ID_2             pgtype.UUID
+	ExamID           pgtype.UUID
+	Question         pgtype.Text
+	Answers          []byte
+	Type             pgtype.Text
+	CreatedAt_2      pgtype.Timestamp
+	UpdatedAt_2      pgtype.Timestamp
+}
+
+func (q *Queries) GetUserExamsWithQuestions(ctx context.Context, userID pgtype.UUID) ([]GetUserExamsWithQuestionsRow, error) {
+	rows, err := q.db.Query(ctx, getUserExamsWithQuestions, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetUserExamsWithQuestionsRow
+	for rows.Next() {
+		var i GetUserExamsWithQuestionsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Title,
+			&i.Slug,
+			&i.VisibilityStatus,
+			&i.IsAccessable,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ID_2,
+			&i.ExamID,
+			&i.Question,
+			&i.Answers,
+			&i.Type,
+			&i.CreatedAt_2,
+			&i.UpdatedAt_2,
 		); err != nil {
 			return nil, err
 		}
