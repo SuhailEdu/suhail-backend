@@ -126,6 +126,59 @@ func (q *Queries) GetExamQuestions(ctx context.Context, examID pgtype.UUID) ([]E
 	return items, nil
 }
 
+const getParticipatedExams = `-- name: GetParticipatedExams :many
+SELECT exams.id, exams.user_id, exams.title, exams.slug, exams.visibility_status, exams.is_accessable, exams.created_at, exams.updated_at, COUNT(exam_questions.*) as questions_count
+FROM exams
+         LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
+         INNER JOIN exam_participants ON exam_participants.exam_id = exams.id AND exam_participants.user_id = $1
+GROUP BY exams.id
+
+ORDER BY exams.created_at DESC
+`
+
+type GetParticipatedExamsRow struct {
+	ID               pgtype.UUID
+	UserID           pgtype.UUID
+	Title            string
+	Slug             pgtype.Text
+	VisibilityStatus string
+	IsAccessable     pgtype.Bool
+	CreatedAt        pgtype.Timestamp
+	UpdatedAt        pgtype.Timestamp
+	QuestionsCount   int64
+}
+
+// WHERE user_id = $1
+func (q *Queries) GetParticipatedExams(ctx context.Context, userID pgtype.UUID) ([]GetParticipatedExamsRow, error) {
+	rows, err := q.db.Query(ctx, getParticipatedExams, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetParticipatedExamsRow
+	for rows.Next() {
+		var i GetParticipatedExamsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Title,
+			&i.Slug,
+			&i.VisibilityStatus,
+			&i.IsAccessable,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.QuestionsCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUserExams = `-- name: GetUserExams :many
 SELECT exams.id, exams.user_id, exams.title, exams.slug, exams.visibility_status, exams.is_accessable, exams.created_at, exams.updated_at, COUNT(exam_questions.*) as questions_count
 FROM exams

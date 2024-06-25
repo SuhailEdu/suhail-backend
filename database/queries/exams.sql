@@ -22,6 +22,17 @@ GROUP BY exams.id
 ORDER BY exams.created_at DESC
 ;
 
+-- name: GetParticipatedExams :many
+SELECT exams.*, COUNT(exam_questions.*) as questions_count
+FROM exams
+         LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
+         INNER JOIN exam_participants ON exam_participants.exam_id = exams.id AND exam_participants.user_id = $1
+-- WHERE user_id = $1
+GROUP BY exams.id
+
+ORDER BY exams.created_at DESC
+;
+
 
 -- name: GetUserExamsWithQuestions :many
 SELECT *

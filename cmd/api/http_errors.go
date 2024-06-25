@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"log"
 	"net/http"
@@ -35,6 +36,11 @@ func unAuthorizedError(c echo.Context, err interface{}) error {
 }
 
 func dataResponse(c echo.Context, data interface{}) error {
+
+	fmt.Println(data == nil)
+	//if len(data) == 0 {
+	//
+	//}
 
 	return c.JSON(http.StatusOK, map[string]interface{}{"data": data})
 }

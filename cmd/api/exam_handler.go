@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/SuhailEdu/suhail-backend/internal/database/schema"
 	"github.com/SuhailEdu/suhail-backend/internal/types"
 	"github.com/SuhailEdu/suhail-backend/internal/validations"
@@ -23,6 +24,20 @@ func (config *Config) getExamsList(c echo.Context) error {
 	}
 
 	return dataResponse(c, types.SerializeExams(exams))
+
+}
+
+func (config *Config) getParticipatedExams(c echo.Context) error {
+
+	authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
+	userId := authenticatedUser.ID
+	exams, err := config.db.GetParticipatedExams(c.Request().Context(), userId)
+	if err != nil {
+		return serverError(c, err)
+	}
+
+	fmt.Println(types.SerializeParticipatedExams(exams))
+	return dataResponse(c, types.SerializeParticipatedExams(exams))
 
 }
 func (config *Config) createExam(c echo.Context) error {

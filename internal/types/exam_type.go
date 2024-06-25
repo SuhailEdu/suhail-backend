@@ -110,6 +110,12 @@ func examSchemaToExamResource(exam schema.Exam, questions []schema.ExamQuestion)
 
 func SerializeExams(exams []schema.GetUserExamsRow) []ExamResource {
 
+	if len(exams) == 0 {
+
+		return []ExamResource{}
+
+	}
+
 	var examResource []ExamResource
 
 	for _, exam := range exams {
@@ -125,6 +131,32 @@ func SerializeExams(exams []schema.GetUserExamsRow) []ExamResource {
 	return examResource
 
 }
+
+func SerializeParticipatedExams(exams []schema.GetParticipatedExamsRow) []ExamResource {
+
+	if len(exams) == 0 {
+
+		return []ExamResource{}
+
+	}
+
+	var examResource []ExamResource
+
+	for _, exam := range exams {
+		examResource = append(examResource, ExamResource{
+			Id:             pgUUIDtoGoogleUUID(exam.ID),
+			UserId:         pgUUIDtoGoogleUUID(exam.UserID),
+			ExamTitle:      exam.Title,
+			Status:         exam.VisibilityStatus,
+			QuestionsCount: exam.QuestionsCount,
+		})
+	}
+
+	return examResource
+
+}
+
+//func SerializeExams(exams []schema.GetUserExamsRow  string) []ExamResource {
 
 func pgUUIDtoGoogleUUID(inputId pgtype.UUID) uuid.UUID {
 	idUUId, _ := inputId.UUIDValue()
