@@ -5,55 +5,51 @@
 package schema
 
 import (
-	"database/sql"
-	"encoding/json"
-	"time"
-
-	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Exam struct {
-	ID               uuid.UUID
-	UserID           uuid.UUID
+	ID               pgtype.UUID
+	UserID           pgtype.UUID
 	Title            string
-	Slug             sql.NullString
+	Slug             pgtype.Text
 	VisibilityStatus string
-	IsAccessable     sql.NullBool
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
+	IsAccessable     pgtype.Bool
+	CreatedAt        pgtype.Timestamp
+	UpdatedAt        pgtype.Timestamp
 }
 
 type ExamParticipant struct {
-	UserID    uuid.UUID
-	ExamID    uuid.UUID
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	UserID    pgtype.UUID
+	ExamID    pgtype.UUID
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
 }
 
 type ExamQuestion struct {
-	ID        uuid.UUID
-	ExamID    uuid.UUID
+	ID        pgtype.UUID
+	ExamID    pgtype.UUID
 	Question  string
-	Answers   json.RawMessage
+	Answers   []byte
 	Type      string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
 }
 
 type Token struct {
 	Hash   []byte
-	UserID uuid.UUID
-	Expiry time.Time
+	UserID pgtype.UUID
+	Expiry pgtype.Timestamp
 	Scope  string
 }
 
 type User struct {
-	ID              uuid.UUID
+	ID              pgtype.UUID
 	FirstName       string
 	LastName        string
 	Email           string
 	Password        []byte
-	EmailVerifiedAt sql.NullTime
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	EmailVerifiedAt pgtype.Timestamp
+	CreatedAt       pgtype.Timestamp
+	UpdatedAt       pgtype.Timestamp
 }

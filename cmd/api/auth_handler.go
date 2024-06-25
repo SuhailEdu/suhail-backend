@@ -4,8 +4,11 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base32"
+	"fmt"
+	"github.com/SuhailEdu/suhail-backend/internal"
 	"github.com/SuhailEdu/suhail-backend/internal/database/schema"
 	_ "github.com/go-playground/validator/v10"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v4"
 	"github.com/thedevsaddam/govalidator"
 	_ "github.com/thedevsaddam/govalidator"
@@ -60,13 +63,14 @@ func (config *Config) loginUser(c echo.Context) error {
 		return validationError(c, map[string]any{"email": []string{"Incorrect credentials"}})
 	}
 
-	authToken, err := createUserToken(user, c, *config)
+	authToken, err := createUserToken(user, c, config)
 
 	if err != nil {
 		return serverError(c, err)
 	}
 
-	return c.JSON(http.StatusOK, serializeUserResource(user, authToken))
+	fmt.Println("And here")
+	return c.JSON(http.StatusOK, internal.SerializeUserResource(user, authToken))
 }
 func (config *Config) registerUser(c echo.Context) error {
 
@@ -121,13 +125,13 @@ func (config *Config) registerUser(c echo.Context) error {
 
 	createdUser, err := config.db.CreateUser(c.Request().Context(), userSchema)
 
-	authToken, err := createUserToken(createdUser, c, *config)
+	authToken, err := createUserToken(createdUser, c, config)
 
 	if err != nil {
 		return serverError(c, err)
 	}
 
-	return c.JSON(http.StatusOK, serializeUserResource(createdUser, authToken))
+	return c.JSON(http.StatusOK, internal.SerializeUserResource(createdUser, authToken))
 }
 
 func checkEmailIsUnique(c echo.Context, config Config, email string) bool {
@@ -138,7 +142,7 @@ func checkEmailIsUnique(c echo.Context, config Config, email string) bool {
 
 }
 
-func createUserToken(user schema.User, c echo.Context, config Config) (string, error) {
+func createUserToken(user schema.User, c echo.Context, config *Config) (string, error) {
 
 	randomBytes := make([]byte, 16)
 
@@ -152,14 +156,17 @@ func createUserToken(user schema.User, c echo.Context, config Config) (string, e
 
 	hash := sha256.Sum256([]byte(plainText))
 
+	fmt.Println(pgtype.Timestamptz{Time: time.Now()})
+
 	_, err = config.db.CreateUserToken(c.Request().Context(), schema.CreateUserTokenParams{
 		Hash:   hash[:],
 		UserID: user.ID,
-		Expiry: time.Now().Add(24 * time.Hour),
+		Expiry: pgtype.Timestamp(pgtype.Timestamptz{Time: time.Now(), Valid: true}),
 		Scope:  "login",
 	})
 
 	if err != nil {
+		fmt.Println("Here error timestamp")
 		return "", err
 	}
 	return plainText, nil

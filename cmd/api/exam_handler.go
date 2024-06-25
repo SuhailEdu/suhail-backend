@@ -1,14 +1,16 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/SuhailEdu/suhail-backend/internal"
 	"github.com/SuhailEdu/suhail-backend/internal/database/schema"
 	_ "github.com/go-playground/validator/v10"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v4"
 	"github.com/thedevsaddam/govalidator"
 	_ "github.com/thedevsaddam/govalidator"
 	_ "golang.org/x/crypto/bcrypt"
-	"net/http"
 	"reflect"
 )
 
@@ -78,7 +80,49 @@ func (config *Config) createExam(c echo.Context) error {
 			"questions": questionErrors,
 		})
 	}
-	return c.JSON(http.StatusCreated, examSchema)
+
+	examParams := schema.CreateExamParams{
+		UserID:           authenticatedUser.ID,
+		Title:            examSchema.ExamTitle,
+		Slug:             pgtype.Text{String: examSchema.ExamTitle},
+		IsAccessable:     pgtype.Bool{Bool: true},
+		VisibilityStatus: examSchema.Status,
+	}
+
+	createdExam, err := config.db.CreateExam(c.Request().Context(), examParams)
+	if err != nil {
+		return serverError(c, err)
+	}
+
+	var questionsParams []schema.CreateExamQuestionsParams
+
+	for _, question := range examSchema.Questions {
+		answers, err := json.Marshal(question.Options)
+		if err != nil {
+			return serverError(c, err)
+		}
+		questionsParams = append(questionsParams, schema.CreateExamQuestionsParams{
+			ExamID:   createdExam.ID,
+			Question: question.Title,
+			Type:     "options",
+			Answers:  answers,
+		})
+	}
+
+	_, err = config.db.CreateExamQuestions(c.Request().Context(), questionsParams)
+
+	if err != nil {
+		return serverError(c, err)
+	}
+
+	examId, err := createdExam.ID.UUIDValue()
+	if err != nil {
+		return serverError(c, err)
+	}
+
+	createdQuestions, _ := config.db.GetExamQuestions(c.Request().Context(), examId)
+
+	return dataResponse(c, internal.SerializeExamResource(createdExam, createdQuestions))
 
 }
 

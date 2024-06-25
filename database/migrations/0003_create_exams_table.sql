@@ -23,14 +23,14 @@ CREATE TABLE IF NOT EXISTS exam_participants (
 
 
 CREATE TABLE IF NOT EXISTS exam_questions (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4() ,
     exam_id UUId NOT NULL REFERENCES exams ON DELETE CASCADE,
     question TEXT NOT NULL,
     answers JSON NOT NULL,
     type text NOT NULL,
 
-    created_at TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP NOT NULL
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
 

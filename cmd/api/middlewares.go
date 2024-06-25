@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/sha256"
-	"fmt"
 	"github.com/labstack/echo/v4"
 	"strings"
 	"time"
@@ -25,13 +24,11 @@ func (config *Config) checkAuthToken(next echo.HandlerFunc) echo.HandlerFunc {
 
 		userToken, err := config.db.GetUserByToken(c.Request().Context(), hash[:])
 
-		fmt.Println(err)
-
 		if err != nil {
 			return unAuthorizedError(c, "Invalid Authorization token")
 		}
 
-		if userToken.Expiry.Before(time.Now()) {
+		if userToken.Expiry.Time.Before(time.Now()) {
 			return unAuthorizedError(c, "Expired Authorization token")
 		}
 

@@ -7,9 +7,8 @@ package schema
 
 import (
 	"context"
-	"time"
 
-	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createUserToken = `-- name: CreateUserToken :one
@@ -20,13 +19,13 @@ RETURNING hash, user_id, expiry, scope
 
 type CreateUserTokenParams struct {
 	Hash   []byte
-	UserID uuid.UUID
-	Expiry time.Time
+	UserID pgtype.UUID
+	Expiry pgtype.Timestamp
 	Scope  string
 }
 
 func (q *Queries) CreateUserToken(ctx context.Context, arg CreateUserTokenParams) (Token, error) {
-	row := q.db.QueryRowContext(ctx, createUserToken,
+	row := q.db.QueryRow(ctx, createUserToken,
 		arg.Hash,
 		arg.UserID,
 		arg.Expiry,
@@ -47,13 +46,13 @@ SELECT users.id,tokens.hash , tokens.expiry  FROM tokens INNER JOIN users ON use
 `
 
 type GetUserByTokenRow struct {
-	ID     uuid.UUID
+	ID     pgtype.UUID
 	Hash   []byte
-	Expiry time.Time
+	Expiry pgtype.Timestamp
 }
 
 func (q *Queries) GetUserByToken(ctx context.Context, hash []byte) (GetUserByTokenRow, error) {
-	row := q.db.QueryRowContext(ctx, getUserByToken, hash)
+	row := q.db.QueryRow(ctx, getUserByToken, hash)
 	var i GetUserByTokenRow
 	err := row.Scan(&i.ID, &i.Hash, &i.Expiry)
 	return i, err
@@ -64,7 +63,7 @@ SELECT hash, user_id, expiry, scope FROM tokens WHERE hash = $1
 `
 
 func (q *Queries) GetUserToken(ctx context.Context, hash []byte) (Token, error) {
-	row := q.db.QueryRowContext(ctx, getUserToken, hash)
+	row := q.db.QueryRow(ctx, getUserToken, hash)
 	var i Token
 	err := row.Scan(
 		&i.Hash,

@@ -14,7 +14,7 @@ SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)
 `
 
 func (q *Queries) CheckEmailUniqueness(ctx context.Context, email string) (bool, error) {
-	row := q.db.QueryRowContext(ctx, checkEmailUniqueness, email)
+	row := q.db.QueryRow(ctx, checkEmailUniqueness, email)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
@@ -34,7 +34,7 @@ type CreateUserParams struct {
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser,
+	row := q.db.QueryRow(ctx, createUser,
 		arg.FirstName,
 		arg.LastName,
 		arg.Password,
@@ -59,7 +59,7 @@ SELECT id, first_name, last_name, email, password, email_verified_at, created_at
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
 	var i User
 	err := row.Scan(
 		&i.ID,
