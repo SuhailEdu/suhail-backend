@@ -2,7 +2,7 @@ package types
 
 import (
 	"database/sql"
-	"github.com/SuhailEdu/suhail-backend/internal/database/schema"
+	"github.com/SuhailEdu/suhail-backend/models"
 	"github.com/google/uuid"
 	"time"
 )
@@ -19,7 +19,7 @@ type UserResource struct {
 	Token           string       `json:"token"`
 }
 
-func SerializeUserResource(user schema.User, token string) UserResource {
+func SerializeUserResource(user models.User, token string) UserResource {
 
 	return UserResource{
 		//ID:        user.ID,

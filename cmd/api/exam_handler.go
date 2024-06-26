@@ -3,23 +3,28 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/SuhailEdu/suhail-backend/internal/database/schema"
 	"github.com/SuhailEdu/suhail-backend/internal/types"
 	"github.com/SuhailEdu/suhail-backend/internal/validations"
+	"github.com/SuhailEdu/suhail-backend/models"
 	_ "github.com/go-playground/validator/v10"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v4"
 	"github.com/thedevsaddam/govalidator"
 	_ "github.com/thedevsaddam/govalidator"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	_ "golang.org/x/crypto/bcrypt"
-	"net/http"
 )
 
 func (config *Config) getExamsList(c echo.Context) error {
 
-	authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
-	userId := authenticatedUser.ID
-	exams, err := config.db.GetUserExams(c.Request().Context(), userId)
+	authenticatedUser := c.Get("user").(*models.Token)
+
+	userId := authenticatedUser.UserID
+	//exams, err := config.db.GetUserExams(c.Request().Context(), userId)
+
+	exams, err := models.Exams(qm.Limit(1), qm.Where("user_id = ?", userId)).AllG(c.Request().Context())
+
 	if err != nil {
 		return serverError(c, err)
 	}
@@ -28,38 +33,39 @@ func (config *Config) getExamsList(c echo.Context) error {
 
 }
 
-func (config *Config) getParticipatedExams(c echo.Context) error {
-
-	authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
-	userId := authenticatedUser.ID
-	exams, err := config.db.GetParticipatedExams(c.Request().Context(), userId)
-	if err != nil {
-		return serverError(c, err)
-	}
-
-	return dataResponse(c, types.SerializeParticipatedExams(exams))
-
-}
+//func (config *Config) getParticipatedExams(c echo.Context) error {
+//
+//	authenticatedUser := c.Get("user").(models.User)
+//	userId := authenticatedUser.ID
+//	exams, err := config.db.GetParticipatedExams(c.Request().Context(), userId)
+//	if err != nil {
+//		return serverError(c, err)
+//	}
+//
+//	return dataResponse(c, types.SerializeParticipatedExams(exams))
+//
+//}
 
 func (config *Config) getSingleExam(c echo.Context) error {
 
-	authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
-	userId := authenticatedUser.ID
-	examId := pgtype.UUID{Bytes: [16]byte([]byte(c.Param("id")))}
-	fmt.Println(examId, userId)
+	//authenticatedUser := c.Get("user").(models.User)
+	//userId := authenticatedUser.ID
 
-	exam, err := config.db.FindMyExam(c.Request().Context(), schema.FindMyExamParams{ID: examId, UserID: userId})
-
-	if err.Error() == "no rows in result set" {
-		participatedExam, pErr := config.db.FindMyParticipatedExam(c.Request().Context(), schema.FindMyParticipatedExamParams{ID: examId, UserID: userId})
-		if pErr.Error() == "no rows in result set" {
-			return c.JSON(http.StatusNotFound, map[string]string{})
-		}
-		return dataResponse(c, participatedExam)
-
+	exam, err := models.FindExamG(c.Request().Context(), c.Param("id"))
+	if err != nil {
+		fmt.Println(err)
 	}
 
-	return dataResponse(c, types.SerializeSingleExam(exam))
+	//if err.Error() == "no rows in result set" {
+	//	participatedExam, pErr := config.db.FindMyParticipatedExam(c.Request().Context(), schema.FindMyParticipatedExamParams{ID: examId, UserID: userId})
+	//	if pErr.Error() == "no rows in result set" {
+	//		return c.JSON(http.StatusNotFound, map[string]string{})
+	//	}
+	//	return dataResponse(c, participatedExam)
+	//
+	//}
+
+	return dataResponse(c, types.SerializeSingleExam(*exam))
 
 }
 func (config *Config) createExam(c echo.Context) error {
@@ -86,12 +92,14 @@ func (config *Config) createExam(c echo.Context) error {
 		return validationError(c, e)
 	}
 
-	authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
+	authenticatedUser := c.Get("user").(*models.Token)
 
-	examTitleExists, _ := config.db.CheckExamTitleExists(c.Request().Context(), schema.CheckExamTitleExistsParams{
-		Title:  examSchema.ExamTitle,
-		UserID: authenticatedUser.ID,
-	})
+	examTitleExists, err := models.Exams(qm.Where("title = ?", examSchema.ExamTitle)).ExistsG(c.Request().Context())
+
+	if err != nil {
+		return serverError(c, err)
+	}
+
 	if examTitleExists {
 		return validationError(c, map[string]interface{}{
 			"exam_title": "You already have an exam with this title.",
@@ -106,47 +114,49 @@ func (config *Config) createExam(c echo.Context) error {
 		})
 	}
 
-	examParams := schema.CreateExamParams{
-		UserID:           authenticatedUser.ID,
-		Title:            examSchema.ExamTitle,
-		Slug:             pgtype.Text{String: examSchema.ExamTitle},
-		IsAccessable:     pgtype.Bool{Bool: true},
-		VisibilityStatus: examSchema.Status,
-	}
+	var examParams models.Exam
+	examParams.UserID = authenticatedUser.UserID
 
-	createdExam, err := config.db.CreateExam(c.Request().Context(), examParams)
+	examParams.Title = examSchema.ExamTitle
+	examParams.Slug = null.String{String: examSchema.ExamTitle, Valid: true}
+	examParams.IsAccessable = null.Bool{Bool: true, Valid: true}
+	examParams.VisibilityStatus = examSchema.Status
+
+	err = examParams.InsertG(c.Request().Context(), boil.Blacklist("id"))
+	err = examParams.GetID()
 	if err != nil {
+		fmt.Println("Error inserting exam", examParams.ID, err)
 		return serverError(c, err)
 	}
 
-	var questionsParams []schema.CreateExamQuestionsParams
+	fmt.Println("exam", examParams.ID)
+	if err != nil {
+		return serverError(c, err)
+	}
+	var questionsParams models.ExamQuestionSlice
+
+	//err = examParams.AddExamQuestionsG(c.Request().Context() , true , &questionsParams)
 
 	for _, question := range examSchema.Questions {
 		answers, err := json.Marshal(question.Options)
 		if err != nil {
 			return serverError(c, err)
 		}
-		questionsParams = append(questionsParams, schema.CreateExamQuestionsParams{
-			ExamID:   createdExam.ID,
+		questionsParams = append(questionsParams, &models.ExamQuestion{
+			ExamID:   examParams.ID,
 			Question: question.Title,
 			Type:     "options",
 			Answers:  answers,
 		})
 	}
 
-	_, err = config.db.CreateExamQuestions(c.Request().Context(), questionsParams)
-
-	if err != nil {
-		return serverError(c, err)
+	if len(questionsParams) > 0 {
+		_, err = questionsParams.InsertAll(c.Request().Context(), config.db, boil.Blacklist("id"))
+		if err != nil {
+			return serverError(c, err)
+		}
 	}
 
-	examId, err := createdExam.ID.UUIDValue()
-	if err != nil {
-		return serverError(c, err)
-	}
-
-	createdQuestions, _ := config.db.GetExamQuestions(c.Request().Context(), examId)
-
-	return dataResponse(c, types.SerializeExamResource(createdExam, createdQuestions))
+	return dataResponse(c, types.SerializeExamResource(examParams, questionsParams))
 
 }

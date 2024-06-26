@@ -1,0 +1,11 @@
+[psql]
+# The blacklist attribute allows sqlboiler to skip reading these values from the configuration file
+# and instead fetch them from environment variables.
+# blacklist = ["user", "pass"]
+dbname = "suhail"
+host = "localhost"
+pass = "password"
+port = 5432
+schema = "public"
+sslmode = "disable"
+user = "peter"

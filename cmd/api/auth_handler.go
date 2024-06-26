@@ -5,16 +5,17 @@ import (
 	"crypto/sha256"
 	"encoding/base32"
 	"fmt"
-	"github.com/SuhailEdu/suhail-backend/internal/database/schema"
 	"github.com/SuhailEdu/suhail-backend/internal/types"
+	"github.com/SuhailEdu/suhail-backend/models"
 	_ "github.com/go-playground/validator/v10"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v4"
 	"github.com/thedevsaddam/govalidator"
 	_ "github.com/thedevsaddam/govalidator"
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"golang.org/x/crypto/bcrypt"
 	_ "golang.org/x/crypto/bcrypt"
-	"log"
 	"net/http"
 	"time"
 )
@@ -54,23 +55,24 @@ func (config *Config) loginUser(c echo.Context) error {
 		return validationError(c, e)
 	}
 
-	user, err := config.db.GetUserByEmail(c.Request().Context(), userInput.Email)
-	if err != nil {
+	user, err := models.Users(qm.Where("email = ?", "client@gmail.com"), qm.Limit(1)).AllG(c.Request().Context())
+
+	if len(user) == 0 {
 		return validationError(c, map[string]any{"email": []string{"Incorrect credentials"}})
 	}
 
-	if err := bcrypt.CompareHashAndPassword(user.Password, []byte(userInput.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword(user[0].Password.Bytes, []byte(userInput.Password)); err != nil {
 		return validationError(c, map[string]any{"email": []string{"Incorrect credentials"}})
 	}
 
-	authToken, err := createUserToken(user, c, config)
+	authToken, err := createUserToken(*user[0], c)
 
 	if err != nil {
+		fmt.Println("error:", err)
 		return serverError(c, err)
 	}
 
-	fmt.Println("And here")
-	return c.JSON(http.StatusOK, types.SerializeUserResource(user, authToken))
+	return c.JSON(http.StatusOK, types.SerializeUserResource(*user[0], authToken))
 }
 func (config *Config) registerUser(c echo.Context) error {
 
@@ -108,41 +110,42 @@ func (config *Config) registerUser(c echo.Context) error {
 		return validationError(c, err)
 	}
 
-	log.Println(userInput)
-
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(userInput.Password), 12)
 
 	if err != nil {
 		return serverError(c, err)
 	}
 
-	userSchema := schema.CreateUserParams{
+	userSchema := models.User{
 		FirstName: userInput.FirstName,
 		LastName:  userInput.LastName,
 		Email:     userInput.Email,
-		Password:  passwordHash,
+		Password:  null.Bytes{Bytes: passwordHash, Valid: true},
 	}
 
-	createdUser, err := config.db.CreateUser(c.Request().Context(), userSchema)
+	err = userSchema.InsertG(c.Request().Context(), boil.Infer())
+	if err != nil {
+		return serverError(c, err)
+	}
 
-	authToken, err := createUserToken(createdUser, c, config)
+	authToken, err := createUserToken(userSchema, c)
 
 	if err != nil {
 		return serverError(c, err)
 	}
 
-	return c.JSON(http.StatusOK, types.SerializeUserResource(createdUser, authToken))
+	return c.JSON(http.StatusOK, types.SerializeUserResource(userSchema, authToken))
 }
 
 func checkEmailIsUnique(c echo.Context, config Config, email string) bool {
 
-	isUsed, _ := config.db.CheckEmailUniqueness(c.Request().Context(), email)
+	exists, _ := models.Users(qm.Where("email = ?", email)).ExistsG(c.Request().Context())
 
-	return isUsed
+	return exists
 
 }
 
-func createUserToken(user schema.User, c echo.Context, config *Config) (string, error) {
+func createUserToken(user models.User, c echo.Context) (string, error) {
 
 	randomBytes := make([]byte, 16)
 
@@ -156,17 +159,18 @@ func createUserToken(user schema.User, c echo.Context, config *Config) (string, 
 
 	hash := sha256.Sum256([]byte(plainText))
 
-	fmt.Println(pgtype.Timestamptz{Time: time.Now()})
-
-	_, err = config.db.CreateUserToken(c.Request().Context(), schema.CreateUserTokenParams{
+	tokenRecord := models.Token{
 		Hash:   hash[:],
 		UserID: user.ID,
-		Expiry: pgtype.Timestamp(pgtype.Timestamptz{Time: time.Now(), Valid: true}),
+		Expiry: time.Now().Add(100 * time.Hour),
 		Scope:  "login",
-	})
+	}
+
+	err = user.AddTokensG(c.Request().Context(), true, &tokenRecord)
+
+	//err = tokenRecord.InsertG(c.Request().Context(), boil.Infer())
 
 	if err != nil {
-		fmt.Println("Here error timestamp")
 		return "", err
 	}
 	return plainText, nil

@@ -2,7 +2,7 @@ package types
 
 import (
 	"encoding/json"
-	"github.com/SuhailEdu/suhail-backend/internal/database/schema"
+	"github.com/SuhailEdu/suhail-backend/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"time"
@@ -50,7 +50,7 @@ type ExamResource struct {
 	QuestionsCount int64     `json:"questions_count"`
 }
 
-func SerializeExamResource(exam schema.Exam, questions []schema.ExamQuestion) ExamResourceWithQuestions {
+func SerializeExamResource(exam models.Exam, questions models.ExamQuestionSlice) ExamResourceWithQuestions {
 
 	qs := make([]QuestionResource, len(questions))
 
@@ -78,7 +78,7 @@ func SerializeExamResource(exam schema.Exam, questions []schema.ExamQuestion) Ex
 
 }
 
-func examSchemaToExamResource(exam schema.Exam, questions []schema.ExamQuestion) (ExamResourceWithQuestions, error) {
+func examSchemaToExamResource(exam models.Exam, questions models.ExamQuestionSlice) (ExamResourceWithQuestions, error) {
 
 	//var examResource []ExamResource
 
@@ -108,7 +108,7 @@ func examSchemaToExamResource(exam schema.Exam, questions []schema.ExamQuestion)
 
 }
 
-func SerializeExams(exams []schema.GetUserExamsRow) []ExamResource {
+func SerializeExams(exams models.ExamSlice) []ExamResource {
 
 	if len(exams) == 0 {
 
@@ -119,12 +119,15 @@ func SerializeExams(exams []schema.GetUserExamsRow) []ExamResource {
 	var examResource []ExamResource
 
 	for _, exam := range exams {
+		examId, _ := uuid.FromBytes([]byte(exam.ID))
+		userId, _ := uuid.FromBytes([]byte(exam.UserID))
+
 		examResource = append(examResource, ExamResource{
-			Id:             pgUUIDtoGoogleUUID(exam.ID),
-			UserId:         pgUUIDtoGoogleUUID(exam.UserID),
+			Id:             examId,
+			UserId:         userId,
 			ExamTitle:      exam.Title,
 			Status:         exam.VisibilityStatus,
-			QuestionsCount: exam.QuestionsCount,
+			QuestionsCount: 55,
 		})
 	}
 
@@ -132,7 +135,7 @@ func SerializeExams(exams []schema.GetUserExamsRow) []ExamResource {
 
 }
 
-func SerializeParticipatedExams(exams []schema.GetParticipatedExamsRow) []ExamResource {
+func SerializeParticipatedExams(exams models.ExamSlice) []ExamResource {
 
 	if len(exams) == 0 {
 
@@ -143,12 +146,15 @@ func SerializeParticipatedExams(exams []schema.GetParticipatedExamsRow) []ExamRe
 	var examResource []ExamResource
 
 	for _, exam := range exams {
+		examId, _ := uuid.FromBytes([]byte(exam.ID))
+		userId, _ := uuid.FromBytes([]byte(exam.UserID))
+
 		examResource = append(examResource, ExamResource{
-			Id:             pgUUIDtoGoogleUUID(exam.ID),
-			UserId:         pgUUIDtoGoogleUUID(exam.UserID),
+			Id:             examId,
+			UserId:         userId,
 			ExamTitle:      exam.Title,
 			Status:         exam.VisibilityStatus,
-			QuestionsCount: exam.QuestionsCount,
+			QuestionsCount: 55,
 		})
 	}
 
@@ -156,11 +162,14 @@ func SerializeParticipatedExams(exams []schema.GetParticipatedExamsRow) []ExamRe
 
 }
 
-func SerializeSingleExam(exam schema.FindMyExamRow) ExamResource {
+func SerializeSingleExam(exam models.Exam) ExamResource {
+
+	examId, _ := uuid.FromBytes([]byte(exam.ID))
+	userId, _ := uuid.FromBytes([]byte(exam.UserID))
 
 	return ExamResource{
-		Id:             pgUUIDtoGoogleUUID(exam.ID),
-		UserId:         pgUUIDtoGoogleUUID(exam.UserID),
+		Id:             examId,
+		UserId:         userId,
 		ExamTitle:      exam.Title,
 		Status:         exam.VisibilityStatus,
 		QuestionsCount: 55,

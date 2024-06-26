@@ -1,20 +1,21 @@
 package main
 
 import (
-	"context"
-	"github.com/SuhailEdu/suhail-backend/internal/database/schema"
-	_ "github.com/SuhailEdu/suhail-backend/internal/database/schema"
-	"github.com/jackc/pgx/v5"
+	"database/sql"
 	_ "github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
+	"github.com/volatiletech/sqlboiler/v4/boil"
+	_ "github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"log"
 	"os"
 )
 
+//go:generate sqlboiler --wipe psql
+
 type Config struct {
-	db     *schema.Queries
+	db     *sql.DB
 	logger *log.Logger
 }
 
@@ -27,16 +28,18 @@ func main() {
 
 	// create the db connection
 	dbUrl := os.Getenv("DATABASE_URL")
-	//connection, err := sql.Open("postgres", dbUrl)
-	conn, err := pgx.Connect(context.Background(), dbUrl)
+	connection, err := sql.Open("postgres", dbUrl)
+
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	queries := schema.New(conn)
+	boil.SetDB(connection)
 
+	//queries := schema.New(conn)
+	//
 	config := &Config{
-		db: queries,
+		db: connection,
 	}
 
 	e := echo.New()
