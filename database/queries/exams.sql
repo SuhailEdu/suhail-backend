@@ -13,6 +13,7 @@ SELECT *
 FROM exams
 WHERE id = $1;
 
+
 -- name: GetUserExams :many
 SELECT exams.*, COUNT(exam_questions.*) as questions_count
 FROM exams
@@ -29,7 +30,6 @@ FROM exams
          INNER JOIN exam_participants ON exam_participants.exam_id = exams.id AND exam_participants.user_id = $1
 -- WHERE user_id = $1
 GROUP BY exams.id
-
 ORDER BY exams.created_at DESC
 ;
 
@@ -47,3 +47,21 @@ WHERE exam_id = $1;
 
 -- name: CheckExamTitleExists :one
 SELECT EXISTS(SELECT 1 FROM exams WHERE title = $1 AND user_id = $2);
+
+-- name: FindMyExam :one
+SELECT *
+FROM exams
+         LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
+WHERE exams.id = $1
+  AND exams.user_id = $2
+;
+
+-- name: FindMyParticipatedExam :one
+SELECT *
+FROM exams
+         LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
+         join exam_participants ON exam_participants.exam_id = exams.id
+WHERE exam_participants.user_id = $1
+  AND exams.id = $2
+;
+

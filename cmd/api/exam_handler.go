@@ -12,6 +12,7 @@ import (
 	"github.com/thedevsaddam/govalidator"
 	_ "github.com/thedevsaddam/govalidator"
 	_ "golang.org/x/crypto/bcrypt"
+	"net/http"
 )
 
 func (config *Config) getExamsList(c echo.Context) error {
@@ -36,8 +37,29 @@ func (config *Config) getParticipatedExams(c echo.Context) error {
 		return serverError(c, err)
 	}
 
-	fmt.Println(types.SerializeParticipatedExams(exams))
 	return dataResponse(c, types.SerializeParticipatedExams(exams))
+
+}
+
+func (config *Config) getSingleExam(c echo.Context) error {
+
+	authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
+	userId := authenticatedUser.ID
+	examId := pgtype.UUID{Bytes: [16]byte([]byte(c.Param("id")))}
+	fmt.Println(examId, userId)
+
+	exam, err := config.db.FindMyExam(c.Request().Context(), schema.FindMyExamParams{ID: examId, UserID: userId})
+
+	if err.Error() == "no rows in result set" {
+		participatedExam, pErr := config.db.FindMyParticipatedExam(c.Request().Context(), schema.FindMyParticipatedExamParams{ID: examId, UserID: userId})
+		if pErr.Error() == "no rows in result set" {
+			return c.JSON(http.StatusNotFound, map[string]string{})
+		}
+		return dataResponse(c, participatedExam)
+
+	}
+
+	return dataResponse(c, types.SerializeSingleExam(exam))
 
 }
 func (config *Config) createExam(c echo.Context) error {

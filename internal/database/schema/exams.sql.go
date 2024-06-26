@@ -70,6 +70,123 @@ type CreateExamQuestionsParams struct {
 	Answers  []byte
 }
 
+const findMyExam = `-- name: FindMyExam :one
+SELECT exams.id, user_id, title, slug, visibility_status, is_accessable, exams.created_at, exams.updated_at, exam_questions.id, exam_id, question, answers, type, exam_questions.created_at, exam_questions.updated_at
+FROM exams
+         LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
+WHERE exams.id = $1
+  AND exams.user_id = $2
+`
+
+type FindMyExamParams struct {
+	ID     pgtype.UUID
+	UserID pgtype.UUID
+}
+
+type FindMyExamRow struct {
+	ID               pgtype.UUID
+	UserID           pgtype.UUID
+	Title            string
+	Slug             pgtype.Text
+	VisibilityStatus string
+	IsAccessable     pgtype.Bool
+	CreatedAt        pgtype.Timestamp
+	UpdatedAt        pgtype.Timestamp
+	ID_2             pgtype.UUID
+	ExamID           pgtype.UUID
+	Question         pgtype.Text
+	Answers          []byte
+	Type             pgtype.Text
+	CreatedAt_2      pgtype.Timestamp
+	UpdatedAt_2      pgtype.Timestamp
+}
+
+func (q *Queries) FindMyExam(ctx context.Context, arg FindMyExamParams) (FindMyExamRow, error) {
+	row := q.db.QueryRow(ctx, findMyExam, arg.ID, arg.UserID)
+	var i FindMyExamRow
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Title,
+		&i.Slug,
+		&i.VisibilityStatus,
+		&i.IsAccessable,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.ID_2,
+		&i.ExamID,
+		&i.Question,
+		&i.Answers,
+		&i.Type,
+		&i.CreatedAt_2,
+		&i.UpdatedAt_2,
+	)
+	return i, err
+}
+
+const findMyParticipatedExam = `-- name: FindMyParticipatedExam :one
+SELECT exams.id, exams.user_id, title, slug, visibility_status, is_accessable, exams.created_at, exams.updated_at, exam_questions.id, exam_questions.exam_id, question, answers, type, exam_questions.created_at, exam_questions.updated_at, exam_participants.user_id, exam_participants.exam_id, exam_participants.created_at, exam_participants.updated_at
+FROM exams
+         LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
+         join exam_participants ON exam_participants.exam_id = exams.id
+WHERE exam_participants.user_id = $1
+  AND exams.id = $2
+`
+
+type FindMyParticipatedExamParams struct {
+	UserID pgtype.UUID
+	ID     pgtype.UUID
+}
+
+type FindMyParticipatedExamRow struct {
+	ID               pgtype.UUID
+	UserID           pgtype.UUID
+	Title            string
+	Slug             pgtype.Text
+	VisibilityStatus string
+	IsAccessable     pgtype.Bool
+	CreatedAt        pgtype.Timestamp
+	UpdatedAt        pgtype.Timestamp
+	ID_2             pgtype.UUID
+	ExamID           pgtype.UUID
+	Question         pgtype.Text
+	Answers          []byte
+	Type             pgtype.Text
+	CreatedAt_2      pgtype.Timestamp
+	UpdatedAt_2      pgtype.Timestamp
+	UserID_2         pgtype.UUID
+	ExamID_2         pgtype.UUID
+	CreatedAt_3      pgtype.Timestamp
+	UpdatedAt_3      pgtype.Timestamp
+}
+
+func (q *Queries) FindMyParticipatedExam(ctx context.Context, arg FindMyParticipatedExamParams) (FindMyParticipatedExamRow, error) {
+	row := q.db.QueryRow(ctx, findMyParticipatedExam, arg.UserID, arg.ID)
+	var i FindMyParticipatedExamRow
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Title,
+		&i.Slug,
+		&i.VisibilityStatus,
+		&i.IsAccessable,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.ID_2,
+		&i.ExamID,
+		&i.Question,
+		&i.Answers,
+		&i.Type,
+		&i.CreatedAt_2,
+		&i.UpdatedAt_2,
+		&i.UserID_2,
+		&i.ExamID_2,
+		&i.CreatedAt_3,
+		&i.UpdatedAt_3,
+	)
+	return i, err
+}
+
 const getExamById = `-- name: GetExamById :one
 SELECT id, user_id, title, slug, visibility_status, is_accessable, created_at, updated_at
 FROM exams
@@ -132,7 +249,6 @@ FROM exams
          LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
          INNER JOIN exam_participants ON exam_participants.exam_id = exams.id AND exam_participants.user_id = $1
 GROUP BY exams.id
-
 ORDER BY exams.created_at DESC
 `
 

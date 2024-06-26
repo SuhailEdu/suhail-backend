@@ -18,6 +18,7 @@ func registerApiRoutes(e *echo.Echo, config *Config) {
 	homeGroup.POST("/exams/create", config.createExam)
 	homeGroup.GET("/exams", config.getExamsList)
 	homeGroup.GET("/others_exams", config.getParticipatedExams)
+	homeGroup.GET("/exams/:id", config.getSingleExam)
 
 	homeGroup.GET("/hello", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")

@@ -156,6 +156,18 @@ func SerializeParticipatedExams(exams []schema.GetParticipatedExamsRow) []ExamRe
 
 }
 
+func SerializeSingleExam(exam schema.FindMyExamRow) ExamResource {
+
+	return ExamResource{
+		Id:             pgUUIDtoGoogleUUID(exam.ID),
+		UserId:         pgUUIDtoGoogleUUID(exam.UserID),
+		ExamTitle:      exam.Title,
+		Status:         exam.VisibilityStatus,
+		QuestionsCount: 55,
+	}
+
+}
+
 //func SerializeExams(exams []schema.GetUserExamsRow  string) []ExamResource {
 
 func pgUUIDtoGoogleUUID(inputId pgtype.UUID) uuid.UUID {
