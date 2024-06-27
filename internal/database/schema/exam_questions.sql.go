@@ -70,11 +70,19 @@ func (q *Queries) CreateQuestion(ctx context.Context, arg CreateQuestionParams) 
 const deleteQuestion = `-- name: DeleteQuestion :exec
 DELETE
 FROM exam_questions
-WHERE id = $1
+
+WHERE exam_questions.id = $1
+  AND EXISTS(SELECT 1 FROM exams WHERE exams.user_id = $2 AND exams.id = $3)
 `
 
-func (q *Queries) DeleteQuestion(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.Exec(ctx, deleteQuestion, id)
+type DeleteQuestionParams struct {
+	ID     uuid.UUID
+	UserID uuid.UUID
+	ID_2   uuid.UUID
+}
+
+func (q *Queries) DeleteQuestion(ctx context.Context, arg DeleteQuestionParams) error {
+	_, err := q.db.Exec(ctx, deleteQuestion, arg.ID, arg.UserID, arg.ID_2)
 	return err
 }
 

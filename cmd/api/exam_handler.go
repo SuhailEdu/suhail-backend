@@ -164,17 +164,9 @@ func (config *Config) updateExam(c echo.Context) error {
 		return badRequestError(c, err)
 	}
 
-	exam, err := config.db.GetExamById(c.Request().Context(), examId)
-
-	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]string{})
-	}
-
-	authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
-
-	if exam.UserID != authenticatedUser.ID {
-		return unAuthorizedError(c, errors.New("unauthroized"))
-
+	canUpdateExam, exam := isExamAuthor(c, config, examId)
+	if !canUpdateExam {
+		return unAuthorizedError(c, errors.New("unauthorized access"))
 	}
 
 	var examSchema types.UpdateExamInput
@@ -227,6 +219,11 @@ func (config *Config) updateQuestion(c echo.Context) error {
 
 	if err != nil {
 		return badRequestError(c, err)
+	}
+
+	canUpdateExam, _ := isExamAuthor(c, config, examId)
+	if !canUpdateExam {
+		return unAuthorizedError(c, errors.New("unauthorized access"))
 	}
 
 	_, err = config.db.GetQuestionById(c.Request().Context(), questionId)
@@ -308,7 +305,10 @@ func (config *Config) addQuestionsToExam(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, map[string]string{})
 	}
 
-	//authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
+	canUpdateExam, _ := isExamAuthor(c, config, examId)
+	if !canUpdateExam {
+		return unAuthorizedError(c, errors.New("unauthorized access"))
+	}
 
 	type input struct {
 		Question types.QuestionInput `json:"question"`
@@ -352,7 +352,7 @@ func (config *Config) addQuestionsToExam(c echo.Context) error {
 
 		ExamID:   examId,
 		Question: questionInput.Question.Title,
-		Type:     "public",
+		Type:     "options",
 		Answers:  jsonOptions,
 	}
 
@@ -403,8 +403,44 @@ func (config *Config) deleteQuestion(c echo.Context) error {
 		return badRequestError(c, err)
 	}
 
-	_ = config.db.DeleteQuestion(c.Request().Context(), questionId)
+	examId, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return badRequestError(c, err)
+	}
+
+	canUpdateExam, _ := isExamAuthor(c, config, examId)
+	if !canUpdateExam {
+		return unAuthorizedError(c, errors.New("unauthorized access"))
+	}
+
+	authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
+	userId := authenticatedUser.ID
+
+	_ = config.db.DeleteQuestion(c.Request().Context(), schema.DeleteQuestionParams{
+		ID:     questionId,
+		UserID: userId,
+		ID_2:   examId,
+	})
 
 	return c.JSON(http.StatusNoContent, nil)
+
+}
+
+func isExamAuthor(c echo.Context, config *Config, examId uuid.UUID) (bool, schema.Exam) {
+
+	exam, err := config.db.GetExamById(c.Request().Context(), examId)
+
+	if err != nil {
+		return false, schema.Exam{}
+	}
+
+	authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
+	userId := authenticatedUser.ID
+
+	if exam.UserID != userId {
+		return false, schema.Exam{}
+
+	}
+	return true, schema.Exam{}
 
 }

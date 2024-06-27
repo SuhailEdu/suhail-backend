@@ -34,5 +34,7 @@ SELECT EXISTS(SELECT 1 FROM exam_questions WHERE question = $1 AND exam_id = $2)
 -- name: DeleteQuestion :exec
 DELETE
 FROM exam_questions
-WHERE id = $1
+
+WHERE exam_questions.id = $1
+  AND EXISTS(SELECT 1 FROM exams WHERE exams.user_id = $2 AND exams.id = $3)
 ;
