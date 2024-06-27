@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/SuhailEdu/suhail-backend/internal/database/schema"
 	"github.com/SuhailEdu/suhail-backend/internal/types"
@@ -57,6 +58,7 @@ func (config *Config) getSingleExam(c echo.Context) error {
 	fmt.Println(exam, err)
 
 	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{})
 		participatedExam, pErr := config.db.FindMyParticipatedExam(c.Request().Context(), schema.FindMyParticipatedExamParams{ID: examId, UserID: userId})
 		if pErr != nil {
 			return c.JSON(http.StatusNotFound, map[string]string{})
@@ -64,7 +66,6 @@ func (config *Config) getSingleExam(c echo.Context) error {
 		return dataResponse(c, participatedExam)
 
 	}
-	//return c.JSON(http.StatusOK, exam)
 
 	return dataResponse(c, types.SerializeSingleExam(exam))
 
@@ -152,5 +153,68 @@ func (config *Config) createExam(c echo.Context) error {
 	createdQuestions, _ := config.db.GetExamQuestions(c.Request().Context(), examId)
 
 	return dataResponse(c, types.SerializeExamResource(createdExam, createdQuestions))
+
+}
+
+func (config *Config) updateExam(c echo.Context) error {
+
+	examId, err := uuid.Parse(c.Param("id"))
+
+	if err != nil {
+		return badRequestError(c, err)
+	}
+
+	exam, err := config.db.GetExamById(c.Request().Context(), examId)
+
+	fmt.Println(exam, err)
+
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{})
+	}
+
+	authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
+
+	if exam.UserID != authenticatedUser.ID {
+		return unAuthorizedError(c, errors.New("unauthroized"))
+
+	}
+
+	var examSchema types.UpdateExamInput
+
+	rules := govalidator.MapData{
+		"exam_title": []string{"required", "min:4", "max:30"},
+		"status":     []string{"required", "in:public,private"},
+	}
+
+	opts := govalidator.Options{
+		Request: c.Request(), // request object
+		Rules:   rules,       // rules map
+		Data:    &examSchema,
+	}
+	// Create a new validator instance
+	v := govalidator.New(opts)
+	e := v.ValidateJSON()
+
+	if len(e) > 0 {
+
+		return validationError(c, e)
+	}
+
+	updateParams := schema.UpdateExamParams{
+		ID:               examId,
+		Title:            examSchema.ExamTitle,
+		VisibilityStatus: examSchema.Status,
+	}
+
+	exam.Title = examSchema.ExamTitle
+	exam.VisibilityStatus = examSchema.Status
+
+	err = config.db.UpdateExam(c.Request().Context(), updateParams)
+
+	if err != nil {
+		return serverError(c, err)
+	}
+
+	return dataResponse(c, types.SerializeUpdateExam(exam))
 
 }

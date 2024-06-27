@@ -407,3 +407,23 @@ func (q *Queries) GetUserExamsWithQuestions(ctx context.Context, userID uuid.UUI
 	}
 	return items, nil
 }
+
+const updateExam = `-- name: UpdateExam :exec
+UPDATE exams
+SET title             = $1,
+    visibility_status = $2
+WHERE id = $3
+
+RETURNING id, user_id, title, slug, visibility_status, is_accessable, created_at, updated_at
+`
+
+type UpdateExamParams struct {
+	Title            string
+	VisibilityStatus string
+	ID               uuid.UUID
+}
+
+func (q *Queries) UpdateExam(ctx context.Context, arg UpdateExamParams) error {
+	_, err := q.db.Exec(ctx, updateExam, arg.Title, arg.VisibilityStatus, arg.ID)
+	return err
+}

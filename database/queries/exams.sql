@@ -13,6 +13,15 @@ SELECT *
 FROM exams
 WHERE id = $1;
 
+-- name: UpdateExam :exec
+UPDATE exams
+SET title             = $1,
+    visibility_status = $2
+WHERE id = $3
+
+RETURNING *
+;
+
 
 -- name: GetUserExams :many
 SELECT exams.*, COUNT(exam_questions.*) as questions_count
@@ -47,6 +56,7 @@ WHERE exam_id = $1;
 
 -- name: CheckExamTitleExists :one
 SELECT EXISTS(SELECT 1 FROM exams WHERE title = $1 AND user_id = $2);
+
 
 -- name: FindMyExam :many
 SELECT sqlc.embed(exams), sqlc.embed(exam_questions)

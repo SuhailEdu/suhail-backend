@@ -24,6 +24,11 @@ type ExamInput struct {
 	Questions []QuestionInput `json:"questions"`
 }
 
+type UpdateExamInput struct {
+	ExamTitle string `json:"exam_title"`
+	Status    string `json:"status"`
+}
+
 type OptionResource struct {
 	Option    string `json:"option"`
 	IsCorrect bool   `json:"is_correct"`
@@ -159,6 +164,19 @@ func SerializeParticipatedExams(exams []schema.GetParticipatedExamsRow) []ExamRe
 	}
 
 	return examResource
+
+}
+
+func SerializeUpdateExam(exam schema.Exam) ExamResource {
+
+	return ExamResource{
+		Id:        exam.ID,
+		UserId:    exam.UserID,
+		ExamTitle: exam.Title,
+		Status:    exam.VisibilityStatus,
+		CreatedAt: exam.CreatedAt.Time,
+		UpdatedAt: exam.UpdatedAt.Time,
+	}
 
 }
 
