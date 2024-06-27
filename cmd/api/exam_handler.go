@@ -293,3 +293,15 @@ func (config *Config) updateQuestion(c echo.Context) error {
 	return dataResponse(c, types.SerializeUpdateQuestion(question, questionId, examId))
 
 }
+func (config *Config) deleteQuestion(c echo.Context) error {
+
+	questionId, err := uuid.Parse(c.Param("questionId"))
+	if err != nil {
+		return badRequestError(c, err)
+	}
+
+	_ = config.db.DeleteQuestion(c.Request().Context(), questionId)
+
+	return c.JSON(http.StatusNoContent, nil)
+
+}

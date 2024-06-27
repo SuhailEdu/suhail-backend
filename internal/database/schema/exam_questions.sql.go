@@ -11,6 +11,17 @@ import (
 	"github.com/google/uuid"
 )
 
+const deleteQuestion = `-- name: DeleteQuestion :exec
+DELETE
+FROM exam_questions
+WHERE id = $1
+`
+
+func (q *Queries) DeleteQuestion(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteQuestion, id)
+	return err
+}
+
 const getQuestionById = `-- name: GetQuestionById :one
 SELECT id, exam_id, question, answers, type, created_at, updated_at
 FROM exam_questions

@@ -14,3 +14,9 @@ FROM exam_questions
 WHERE id = $1
 LIMIT 1
 ;
+
+-- name: DeleteQuestion :exec
+DELETE
+FROM exam_questions
+WHERE id = $1
+;
