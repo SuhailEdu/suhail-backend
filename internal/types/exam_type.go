@@ -29,6 +29,11 @@ type UpdateExamInput struct {
 	Status    string `json:"status"`
 }
 
+type UpdateQuestionInput struct {
+	Title   string           `json:"title"`
+	Options []OptionResource `json:"options"`
+}
+
 type OptionResource struct {
 	Option    string `json:"option"`
 	IsCorrect bool   `json:"is_correct"`
@@ -176,6 +181,27 @@ func SerializeUpdateExam(exam schema.Exam) ExamResource {
 		Status:    exam.VisibilityStatus,
 		CreatedAt: exam.CreatedAt.Time,
 		UpdatedAt: exam.UpdatedAt.Time,
+	}
+
+}
+
+func SerializeUpdateQuestion(question QuestionInput, questionId uuid.UUID, examId uuid.UUID) QuestionResource {
+
+	options := make([]OptionResource, len(question.Options))
+
+	for i, option := range question.Options {
+		options[i] = OptionResource{
+			Option:    option.Option,
+			IsCorrect: option.IsCorrect,
+		}
+
+	}
+
+	return QuestionResource{
+		Id:      questionId,
+		ExamId:  examId,
+		Title:   question.Title,
+		Options: options,
 	}
 
 }

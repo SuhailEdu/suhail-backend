@@ -13,7 +13,7 @@ type QuestionValidationResponse struct {
 	Message         string `json:"message"`
 }
 
-func ValidateQuestions(questionsInput []types.QuestionInput) (bool, interface{}) {
+func ValidateQuestions(questionsInput ...types.QuestionInput) (bool, interface{}) {
 
 	for i, question := range questionsInput {
 

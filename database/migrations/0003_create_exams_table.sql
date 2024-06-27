@@ -12,17 +12,6 @@ CREATE TABLE IF NOT EXISTS exams
     updated_at        TIMESTAMP NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS exam_participants
-(
-    user_id    UUId      NOT NULL REFERENCES users ON DELETE CASCADE,
-    exam_id    UUId      NOT NULL REFERENCES exams ON DELETE CASCADE,
-
-    created_at TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP NOT NULL,
-
-    PRIMARY KEY (user_id, exam_id)
-);
-
 
 CREATE TABLE IF NOT EXISTS exam_questions
 (
@@ -34,6 +23,17 @@ CREATE TABLE IF NOT EXISTS exam_questions
 
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS exam_participants
+(
+    user_id    UUId      NOT NULL REFERENCES users ON DELETE CASCADE,
+    exam_id    UUId      NOT NULL REFERENCES exams ON DELETE CASCADE,
+
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL,
+
+    PRIMARY KEY (user_id, exam_id)
 );
 
 

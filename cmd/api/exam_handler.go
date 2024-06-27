@@ -107,7 +107,7 @@ func (config *Config) createExam(c echo.Context) error {
 
 	}
 
-	isCorrect, questionErrors := validations.ValidateQuestions(examSchema.Questions)
+	isCorrect, questionErrors := validations.ValidateQuestions(examSchema.Questions...)
 	if !isCorrect {
 		return validationError(c, map[string]interface{}{
 			"questions": questionErrors,
@@ -166,8 +166,6 @@ func (config *Config) updateExam(c echo.Context) error {
 
 	exam, err := config.db.GetExamById(c.Request().Context(), examId)
 
-	fmt.Println(exam, err)
-
 	if err != nil {
 		return c.JSON(http.StatusNotFound, map[string]string{})
 	}
@@ -216,5 +214,82 @@ func (config *Config) updateExam(c echo.Context) error {
 	}
 
 	return dataResponse(c, types.SerializeUpdateExam(exam))
+
+}
+func (config *Config) updateQuestion(c echo.Context) error {
+
+	questionId, err := uuid.Parse(c.Param("questionId"))
+	if err != nil {
+		return badRequestError(c, err)
+	}
+
+	examId, err := uuid.Parse(c.Param("id"))
+
+	if err != nil {
+		return badRequestError(c, err)
+	}
+
+	_, err = config.db.GetQuestionById(c.Request().Context(), questionId)
+
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{})
+	}
+
+	//authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
+
+	var questionSchema types.UpdateQuestionInput
+
+	rules := govalidator.MapData{
+		"title":   []string{"required"},
+		"options": []string{"required"},
+	}
+
+	opts := govalidator.Options{
+		Request: c.Request(), // request object
+		Rules:   rules,       // rules map
+		Data:    &questionSchema,
+	}
+	// Create a new validator instance
+	v := govalidator.New(opts)
+	e := v.ValidateJSON()
+
+	if len(e) > 0 {
+		return validationError(c, e)
+	}
+
+	var options []types.OptionInput
+	for _, option := range questionSchema.Options {
+		options = append(options, types.OptionInput{
+			Option:    option.Option,
+			IsCorrect: option.IsCorrect,
+		})
+	}
+
+	question := types.QuestionInput{
+		Title:   questionSchema.Title,
+		Options: options,
+	}
+
+	isCorrect, vErrors := validations.ValidateQuestions(question)
+
+	if !isCorrect {
+		return validationError(c, vErrors)
+	}
+
+	jsonOptions, _ := json.Marshal(question.Options)
+
+	updateParams := schema.UpdateQuestionParams{
+		ID:       questionId,
+		Question: questionSchema.Title,
+		Answers:  jsonOptions,
+	}
+
+	err = config.db.UpdateQuestion(c.Request().Context(), updateParams)
+
+	if err != nil {
+		return serverError(c, err)
+	}
+
+	return dataResponse(c, types.SerializeUpdateQuestion(question, questionId, examId))
 
 }
