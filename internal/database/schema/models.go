@@ -5,12 +5,13 @@
 package schema
 
 import (
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Exam struct {
-	ID               pgtype.UUID
-	UserID           pgtype.UUID
+	ID               uuid.UUID
+	UserID           uuid.UUID
 	Title            string
 	Slug             pgtype.Text
 	VisibilityStatus string
@@ -20,15 +21,15 @@ type Exam struct {
 }
 
 type ExamParticipant struct {
-	UserID    pgtype.UUID
-	ExamID    pgtype.UUID
+	UserID    uuid.UUID
+	ExamID    uuid.UUID
 	CreatedAt pgtype.Timestamp
 	UpdatedAt pgtype.Timestamp
 }
 
 type ExamQuestion struct {
-	ID        pgtype.UUID
-	ExamID    pgtype.UUID
+	ID        uuid.UUID
+	ExamID    uuid.UUID
 	Question  string
 	Answers   []byte
 	Type      string
@@ -38,13 +39,13 @@ type ExamQuestion struct {
 
 type Token struct {
 	Hash   []byte
-	UserID pgtype.UUID
+	UserID uuid.UUID
 	Expiry pgtype.Timestamp
 	Scope  string
 }
 
 type User struct {
-	ID              pgtype.UUID
+	ID              uuid.UUID
 	FirstName       string
 	LastName        string
 	Email           string

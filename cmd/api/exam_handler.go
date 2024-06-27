@@ -7,6 +7,7 @@ import (
 	"github.com/SuhailEdu/suhail-backend/internal/types"
 	"github.com/SuhailEdu/suhail-backend/internal/validations"
 	_ "github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v4"
 	"github.com/thedevsaddam/govalidator"
@@ -45,19 +46,25 @@ func (config *Config) getSingleExam(c echo.Context) error {
 
 	authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
 	userId := authenticatedUser.ID
-	examId := pgtype.UUID{Bytes: [16]byte([]byte(c.Param("id")))}
-	fmt.Println(examId, userId)
+	//examId := pgtype.UUID{Bytes: [16]byte([]byte(c.Param("id"))), Valid: true}
+	examId, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return serverError(c, err)
+	}
+	fmt.Println(c.Param("id"))
 
 	exam, err := config.db.FindMyExam(c.Request().Context(), schema.FindMyExamParams{ID: examId, UserID: userId})
+	fmt.Println(exam, err)
 
-	if err.Error() == "no rows in result set" {
+	if err != nil {
 		participatedExam, pErr := config.db.FindMyParticipatedExam(c.Request().Context(), schema.FindMyParticipatedExamParams{ID: examId, UserID: userId})
-		if pErr.Error() == "no rows in result set" {
+		if pErr != nil {
 			return c.JSON(http.StatusNotFound, map[string]string{})
 		}
 		return dataResponse(c, participatedExam)
 
 	}
+	//return c.JSON(http.StatusOK, exam)
 
 	return dataResponse(c, types.SerializeSingleExam(exam))
 
@@ -140,10 +147,7 @@ func (config *Config) createExam(c echo.Context) error {
 		return serverError(c, err)
 	}
 
-	examId, err := createdExam.ID.UUIDValue()
-	if err != nil {
-		return serverError(c, err)
-	}
+	examId := createdExam.ID
 
 	createdQuestions, _ := config.db.GetExamQuestions(c.Request().Context(), examId)
 

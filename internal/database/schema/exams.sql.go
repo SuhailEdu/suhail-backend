@@ -8,6 +8,7 @@ package schema
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -17,7 +18,7 @@ SELECT EXISTS(SELECT 1 FROM exams WHERE title = $1 AND user_id = $2)
 
 type CheckExamTitleExistsParams struct {
 	Title  string
-	UserID pgtype.UUID
+	UserID uuid.UUID
 }
 
 func (q *Queries) CheckExamTitleExists(ctx context.Context, arg CheckExamTitleExistsParams) (bool, error) {
@@ -34,7 +35,7 @@ RETURNING id, user_id, title, slug, visibility_status, is_accessable, created_at
 `
 
 type CreateExamParams struct {
-	UserID           pgtype.UUID
+	UserID           uuid.UUID
 	Title            string
 	Slug             pgtype.Text
 	VisibilityStatus string
@@ -64,14 +65,14 @@ func (q *Queries) CreateExam(ctx context.Context, arg CreateExamParams) (Exam, e
 }
 
 type CreateExamQuestionsParams struct {
-	ExamID   pgtype.UUID
+	ExamID   uuid.UUID
 	Question string
 	Type     string
 	Answers  []byte
 }
 
-const findMyExam = `-- name: FindMyExam :one
-SELECT exams.id, user_id, title, slug, visibility_status, is_accessable, exams.created_at, exams.updated_at, exam_questions.id, exam_id, question, answers, type, exam_questions.created_at, exam_questions.updated_at
+const findMyExam = `-- name: FindMyExam :many
+SELECT exams.id, exams.user_id, exams.title, exams.slug, exams.visibility_status, exams.is_accessable, exams.created_at, exams.updated_at, exam_questions.id, exam_questions.exam_id, exam_questions.question, exam_questions.answers, exam_questions.type, exam_questions.created_at, exam_questions.updated_at
 FROM exams
          LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
 WHERE exams.id = $1
@@ -79,49 +80,49 @@ WHERE exams.id = $1
 `
 
 type FindMyExamParams struct {
-	ID     pgtype.UUID
-	UserID pgtype.UUID
+	ID     uuid.UUID
+	UserID uuid.UUID
 }
 
 type FindMyExamRow struct {
-	ID               pgtype.UUID
-	UserID           pgtype.UUID
-	Title            string
-	Slug             pgtype.Text
-	VisibilityStatus string
-	IsAccessable     pgtype.Bool
-	CreatedAt        pgtype.Timestamp
-	UpdatedAt        pgtype.Timestamp
-	ID_2             pgtype.UUID
-	ExamID           pgtype.UUID
-	Question         pgtype.Text
-	Answers          []byte
-	Type             pgtype.Text
-	CreatedAt_2      pgtype.Timestamp
-	UpdatedAt_2      pgtype.Timestamp
+	Exam         Exam
+	ExamQuestion ExamQuestion
 }
 
-func (q *Queries) FindMyExam(ctx context.Context, arg FindMyExamParams) (FindMyExamRow, error) {
-	row := q.db.QueryRow(ctx, findMyExam, arg.ID, arg.UserID)
-	var i FindMyExamRow
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.Title,
-		&i.Slug,
-		&i.VisibilityStatus,
-		&i.IsAccessable,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.ID_2,
-		&i.ExamID,
-		&i.Question,
-		&i.Answers,
-		&i.Type,
-		&i.CreatedAt_2,
-		&i.UpdatedAt_2,
-	)
-	return i, err
+func (q *Queries) FindMyExam(ctx context.Context, arg FindMyExamParams) ([]FindMyExamRow, error) {
+	rows, err := q.db.Query(ctx, findMyExam, arg.ID, arg.UserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FindMyExamRow
+	for rows.Next() {
+		var i FindMyExamRow
+		if err := rows.Scan(
+			&i.Exam.ID,
+			&i.Exam.UserID,
+			&i.Exam.Title,
+			&i.Exam.Slug,
+			&i.Exam.VisibilityStatus,
+			&i.Exam.IsAccessable,
+			&i.Exam.CreatedAt,
+			&i.Exam.UpdatedAt,
+			&i.ExamQuestion.ID,
+			&i.ExamQuestion.ExamID,
+			&i.ExamQuestion.Question,
+			&i.ExamQuestion.Answers,
+			&i.ExamQuestion.Type,
+			&i.ExamQuestion.CreatedAt,
+			&i.ExamQuestion.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const findMyParticipatedExam = `-- name: FindMyParticipatedExam :one
@@ -134,13 +135,13 @@ WHERE exam_participants.user_id = $1
 `
 
 type FindMyParticipatedExamParams struct {
-	UserID pgtype.UUID
-	ID     pgtype.UUID
+	UserID uuid.UUID
+	ID     uuid.UUID
 }
 
 type FindMyParticipatedExamRow struct {
-	ID               pgtype.UUID
-	UserID           pgtype.UUID
+	ID               uuid.UUID
+	UserID           uuid.UUID
 	Title            string
 	Slug             pgtype.Text
 	VisibilityStatus string
@@ -154,8 +155,8 @@ type FindMyParticipatedExamRow struct {
 	Type             pgtype.Text
 	CreatedAt_2      pgtype.Timestamp
 	UpdatedAt_2      pgtype.Timestamp
-	UserID_2         pgtype.UUID
-	ExamID_2         pgtype.UUID
+	UserID_2         uuid.UUID
+	ExamID_2         uuid.UUID
 	CreatedAt_3      pgtype.Timestamp
 	UpdatedAt_3      pgtype.Timestamp
 }
@@ -193,7 +194,7 @@ FROM exams
 WHERE id = $1
 `
 
-func (q *Queries) GetExamById(ctx context.Context, id pgtype.UUID) (Exam, error) {
+func (q *Queries) GetExamById(ctx context.Context, id uuid.UUID) (Exam, error) {
 	row := q.db.QueryRow(ctx, getExamById, id)
 	var i Exam
 	err := row.Scan(
@@ -215,7 +216,7 @@ FROM exam_questions
 WHERE exam_id = $1
 `
 
-func (q *Queries) GetExamQuestions(ctx context.Context, examID pgtype.UUID) ([]ExamQuestion, error) {
+func (q *Queries) GetExamQuestions(ctx context.Context, examID uuid.UUID) ([]ExamQuestion, error) {
 	rows, err := q.db.Query(ctx, getExamQuestions, examID)
 	if err != nil {
 		return nil, err
@@ -253,8 +254,8 @@ ORDER BY exams.created_at DESC
 `
 
 type GetParticipatedExamsRow struct {
-	ID               pgtype.UUID
-	UserID           pgtype.UUID
+	ID               uuid.UUID
+	UserID           uuid.UUID
 	Title            string
 	Slug             pgtype.Text
 	VisibilityStatus string
@@ -265,7 +266,7 @@ type GetParticipatedExamsRow struct {
 }
 
 // WHERE user_id = $1
-func (q *Queries) GetParticipatedExams(ctx context.Context, userID pgtype.UUID) ([]GetParticipatedExamsRow, error) {
+func (q *Queries) GetParticipatedExams(ctx context.Context, userID uuid.UUID) ([]GetParticipatedExamsRow, error) {
 	rows, err := q.db.Query(ctx, getParticipatedExams, userID)
 	if err != nil {
 		return nil, err
@@ -305,8 +306,8 @@ ORDER BY exams.created_at DESC
 `
 
 type GetUserExamsRow struct {
-	ID               pgtype.UUID
-	UserID           pgtype.UUID
+	ID               uuid.UUID
+	UserID           uuid.UUID
 	Title            string
 	Slug             pgtype.Text
 	VisibilityStatus string
@@ -316,7 +317,7 @@ type GetUserExamsRow struct {
 	QuestionsCount   int64
 }
 
-func (q *Queries) GetUserExams(ctx context.Context, userID pgtype.UUID) ([]GetUserExamsRow, error) {
+func (q *Queries) GetUserExams(ctx context.Context, userID uuid.UUID) ([]GetUserExamsRow, error) {
 	rows, err := q.db.Query(ctx, getUserExams, userID)
 	if err != nil {
 		return nil, err
@@ -354,8 +355,8 @@ WHERE user_id = $1
 `
 
 type GetUserExamsWithQuestionsRow struct {
-	ID               pgtype.UUID
-	UserID           pgtype.UUID
+	ID               uuid.UUID
+	UserID           uuid.UUID
 	Title            string
 	Slug             pgtype.Text
 	VisibilityStatus string
@@ -371,7 +372,7 @@ type GetUserExamsWithQuestionsRow struct {
 	UpdatedAt_2      pgtype.Timestamp
 }
 
-func (q *Queries) GetUserExamsWithQuestions(ctx context.Context, userID pgtype.UUID) ([]GetUserExamsWithQuestionsRow, error) {
+func (q *Queries) GetUserExamsWithQuestions(ctx context.Context, userID uuid.UUID) ([]GetUserExamsWithQuestionsRow, error) {
 	rows, err := q.db.Query(ctx, getUserExamsWithQuestions, userID)
 	if err != nil {
 		return nil, err

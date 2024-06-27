@@ -8,6 +8,7 @@ package schema
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -19,7 +20,7 @@ RETURNING hash, user_id, expiry, scope
 
 type CreateUserTokenParams struct {
 	Hash   []byte
-	UserID pgtype.UUID
+	UserID uuid.UUID
 	Expiry pgtype.Timestamp
 	Scope  string
 }
@@ -46,7 +47,7 @@ SELECT users.id,tokens.hash , tokens.expiry  FROM tokens INNER JOIN users ON use
 `
 
 type GetUserByTokenRow struct {
-	ID     pgtype.UUID
+	ID     uuid.UUID
 	Hash   []byte
 	Expiry pgtype.Timestamp
 }

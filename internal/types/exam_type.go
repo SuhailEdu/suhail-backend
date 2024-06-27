@@ -30,13 +30,19 @@ type OptionResource struct {
 }
 
 type QuestionResource struct {
+	Id      uuid.UUID        `json:"id"`
+	ExamId  uuid.UUID        `json:"exam_id"`
 	Title   string           `json:"title"`
 	Options []OptionResource `json:"options"`
 }
 
 type ExamResourceWithQuestions struct {
+	Id        uuid.UUID          `json:"id"`
 	ExamTitle string             `json:"exam_title"`
+	UserId    uuid.UUID          `json:"user_id"`
 	Status    string             `json:"status"`
+	CreatedAt time.Time          `json:"created_at"`
+	UpdatedAt time.Time          `json:"updated_at"`
 	Questions []QuestionResource `json:"questions"`
 }
 
@@ -120,8 +126,8 @@ func SerializeExams(exams []schema.GetUserExamsRow) []ExamResource {
 
 	for _, exam := range exams {
 		examResource = append(examResource, ExamResource{
-			Id:             pgUUIDtoGoogleUUID(exam.ID),
-			UserId:         pgUUIDtoGoogleUUID(exam.UserID),
+			Id:             exam.ID,
+			UserId:         exam.UserID,
 			ExamTitle:      exam.Title,
 			Status:         exam.VisibilityStatus,
 			QuestionsCount: exam.QuestionsCount,
@@ -144,8 +150,8 @@ func SerializeParticipatedExams(exams []schema.GetParticipatedExamsRow) []ExamRe
 
 	for _, exam := range exams {
 		examResource = append(examResource, ExamResource{
-			Id:             pgUUIDtoGoogleUUID(exam.ID),
-			UserId:         pgUUIDtoGoogleUUID(exam.UserID),
+			Id:             exam.ID,
+			UserId:         exam.UserID,
 			ExamTitle:      exam.Title,
 			Status:         exam.VisibilityStatus,
 			QuestionsCount: exam.QuestionsCount,
@@ -156,14 +162,29 @@ func SerializeParticipatedExams(exams []schema.GetParticipatedExamsRow) []ExamRe
 
 }
 
-func SerializeSingleExam(exam schema.FindMyExamRow) ExamResource {
+func SerializeSingleExam(exam []schema.FindMyExamRow) ExamResourceWithQuestions {
 
-	return ExamResource{
-		Id:             pgUUIDtoGoogleUUID(exam.ID),
-		UserId:         pgUUIDtoGoogleUUID(exam.UserID),
-		ExamTitle:      exam.Title,
-		Status:         exam.VisibilityStatus,
-		QuestionsCount: 55,
+	qs := make([]QuestionResource, len(exam))
+	for i, ex := range exam {
+		var answers []OptionResource
+		_ = json.Unmarshal(ex.ExamQuestion.Answers, &answers)
+
+		qs[i] = QuestionResource{
+			Id:      ex.ExamQuestion.ID,
+			ExamId:  ex.ExamQuestion.ExamID,
+			Title:   ex.ExamQuestion.Question,
+			Options: answers,
+		}
+	}
+
+	return ExamResourceWithQuestions{
+		Id:        exam[0].Exam.ID,
+		UserId:    exam[0].Exam.UserID,
+		ExamTitle: exam[0].Exam.Title,
+		Status:    exam[0].Exam.VisibilityStatus,
+		CreatedAt: exam[0].Exam.CreatedAt.Time,
+		UpdatedAt: exam[0].Exam.UpdatedAt.Time,
+		Questions: qs,
 	}
 
 }
