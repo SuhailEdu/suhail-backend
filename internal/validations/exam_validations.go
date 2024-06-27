@@ -14,6 +14,7 @@ type QuestionValidationResponse struct {
 }
 
 func ValidateQuestions(questionsInput ...types.QuestionInput) (bool, interface{}) {
+	//fmt.Println(questionsInput)
 
 	for i, question := range questionsInput {
 

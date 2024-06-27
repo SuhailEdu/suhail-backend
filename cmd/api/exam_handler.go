@@ -293,6 +293,109 @@ func (config *Config) updateQuestion(c echo.Context) error {
 	return dataResponse(c, types.SerializeUpdateQuestion(question, questionId, examId))
 
 }
+
+func (config *Config) addQuestionsToExam(c echo.Context) error {
+
+	examId, err := uuid.Parse(c.Param("id"))
+
+	if err != nil {
+		return badRequestError(c, err)
+	}
+
+	_, err = config.db.GetExamQuestions(c.Request().Context(), examId)
+
+	if err != nil {
+		return c.JSON(http.StatusNotFound, map[string]string{})
+	}
+
+	//authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
+
+	type input struct {
+		Question types.QuestionInput `json:"question"`
+	}
+
+	var questionInput input
+
+	err = json.NewDecoder(c.Request().Body).Decode(&questionInput)
+	if err != nil {
+		return badRequestError(c, err)
+	}
+
+	alreadyExists, err := config.db.CheckQuestionTitleExits(c.Request().Context(), schema.CheckQuestionTitleExitsParams{
+		Question: questionInput.Question.Title,
+		ExamID:   examId,
+	})
+
+	if err != nil {
+		return serverError(c, err)
+	}
+
+	if alreadyExists {
+		return c.JSON(http.StatusConflict, map[string]string{
+			"title": "You already have a question with this title.",
+		})
+	}
+
+	fmt.Println(questionInput.Question.Title)
+
+	isCorrect, vError := validations.ValidateQuestions([]types.QuestionInput{questionInput.Question}...)
+	if !isCorrect {
+		return validationError(c, vError)
+	}
+
+	jsonOptions, err := json.Marshal(questionInput.Question.Options)
+	if err != nil {
+		return serverError(c, err)
+	}
+
+	questionParams := schema.CreateQuestionParams{
+
+		ExamID:   examId,
+		Question: questionInput.Question.Title,
+		Type:     "public",
+		Answers:  jsonOptions,
+	}
+
+	question, err := config.db.CreateQuestion(c.Request().Context(), questionParams)
+
+	return c.JSON(http.StatusOK, types.SerializeCreateQuestion(question))
+
+	//var options []types.OptionInput
+	//for _, option := range questionSchema.Options {
+	//	options = append(options, types.OptionInput{
+	//		Option:    option.Option,
+	//		IsCorrect: option.IsCorrect,
+	//	})
+	//}
+	//
+	//question := types.QuestionInput{
+	//	Title:   questionSchema.Title,
+	//	Options: options,
+	//}
+	//
+	//isCorrect, vErrors := validations.ValidateQuestions(question)
+	//
+	//if !isCorrect {
+	//	return validationError(c, vErrors)
+	//}
+	//
+	//jsonOptions, _ := json.Marshal(question.Options)
+	//
+	//updateParams := schema.UpdateQuestionParams{
+	//	ID:       questionId,
+	//	Question: questionSchema.Title,
+	//	Answers:  jsonOptions,
+	//}
+	//
+	//err = config.db.UpdateQuestion(c.Request().Context(), updateParams)
+	//
+	//if err != nil {
+	//	return serverError(c, err)
+	//}
+	//
+	//return dataResponse(c, types.SerializeUpdateQuestion(question, questionId, examId))
+
+}
 func (config *Config) deleteQuestion(c echo.Context) error {
 
 	questionId, err := uuid.Parse(c.Param("questionId"))

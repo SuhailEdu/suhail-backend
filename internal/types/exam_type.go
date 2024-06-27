@@ -34,6 +34,11 @@ type UpdateQuestionInput struct {
 	Options []OptionResource `json:"options"`
 }
 
+type AddQuestionsToExamInput struct {
+	Title   string           `json:"title"`
+	Options []OptionResource `json:"options"`
+}
+
 type OptionResource struct {
 	Option    string `json:"option"`
 	IsCorrect bool   `json:"is_correct"`
@@ -181,6 +186,23 @@ func SerializeUpdateExam(exam schema.Exam) ExamResource {
 		Status:    exam.VisibilityStatus,
 		CreatedAt: exam.CreatedAt.Time,
 		UpdatedAt: exam.UpdatedAt.Time,
+	}
+
+}
+
+func SerializeCreateQuestion(question schema.ExamQuestion) QuestionResource {
+
+	var options []OptionResource
+	err := json.Unmarshal(question.Answers, &options)
+	if err != nil {
+		return QuestionResource{}
+	}
+
+	return QuestionResource{
+		Id:      question.ID,
+		ExamId:  question.ExamID,
+		Title:   question.Question,
+		Options: options,
 	}
 
 }

@@ -11,6 +11,62 @@ import (
 	"github.com/google/uuid"
 )
 
+const checkQuestionTitleExits = `-- name: CheckQuestionTitleExits :one
+SELECT EXISTS(SELECT 1 FROM exam_questions WHERE question = $1 AND exam_id = $2)
+`
+
+type CheckQuestionTitleExitsParams struct {
+	Question string
+	ExamID   uuid.UUID
+}
+
+func (q *Queries) CheckQuestionTitleExits(ctx context.Context, arg CheckQuestionTitleExitsParams) (bool, error) {
+	row := q.db.QueryRow(ctx, checkQuestionTitleExits, arg.Question, arg.ExamID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+type CreateExamQuestionsParams struct {
+	ExamID   uuid.UUID
+	Question string
+	Type     string
+	Answers  []byte
+}
+
+const createQuestion = `-- name: CreateQuestion :one
+INSERT INTO exam_questions(exam_id, question, type, answers)
+VALUES ($1, $2, $3, $4)
+RETURNING id, exam_id, question, answers, type, created_at, updated_at
+`
+
+type CreateQuestionParams struct {
+	ExamID   uuid.UUID
+	Question string
+	Type     string
+	Answers  []byte
+}
+
+func (q *Queries) CreateQuestion(ctx context.Context, arg CreateQuestionParams) (ExamQuestion, error) {
+	row := q.db.QueryRow(ctx, createQuestion,
+		arg.ExamID,
+		arg.Question,
+		arg.Type,
+		arg.Answers,
+	)
+	var i ExamQuestion
+	err := row.Scan(
+		&i.ID,
+		&i.ExamID,
+		&i.Question,
+		&i.Answers,
+		&i.Type,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const deleteQuestion = `-- name: DeleteQuestion :exec
 DELETE
 FROM exam_questions

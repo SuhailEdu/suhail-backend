@@ -3,11 +3,6 @@ INSERT INTO exams(id, user_id, title, slug, visibility_status, is_accessable, cr
 VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5, current_timestamp, current_timestamp)
 RETURNING *;
 
--- name: CreateExamQuestions :copyfrom
-INSERT INTO exam_questions(exam_id, question, type, answers)
-VALUES ($1, $2, $3, $4)
-;
-
 -- name: GetExamById :one
 SELECT *
 FROM exams

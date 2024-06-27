@@ -20,6 +20,7 @@ func registerApiRoutes(e *echo.Echo, config *Config) {
 	homeGroup.GET("/others_exams", config.getParticipatedExams)
 	homeGroup.GET("/exams/:id", config.getSingleExam)
 	homeGroup.PATCH("/exams/:id", config.updateExam)
+	homeGroup.POST("/exams/:id/questions", config.addQuestionsToExam)
 	homeGroup.PATCH("/exams/:id/questions/:questionId", config.updateQuestion)
 	homeGroup.DELETE("/exams/:id/questions/:questionId", config.deleteQuestion)
 

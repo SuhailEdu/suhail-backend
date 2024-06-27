@@ -64,13 +64,6 @@ func (q *Queries) CreateExam(ctx context.Context, arg CreateExamParams) (Exam, e
 	return i, err
 }
 
-type CreateExamQuestionsParams struct {
-	ExamID   uuid.UUID
-	Question string
-	Type     string
-	Answers  []byte
-}
-
 const findMyExam = `-- name: FindMyExam :many
 SELECT exams.id, exams.user_id, exams.title, exams.slug, exams.visibility_status, exams.is_accessable, exams.created_at, exams.updated_at, exam_questions.id, exam_questions.exam_id, exam_questions.question, exam_questions.answers, exam_questions.type, exam_questions.created_at, exam_questions.updated_at
 FROM exams
