@@ -72,6 +72,7 @@ func (config *Config) loginUser(c echo.Context) error {
 	fmt.Println("And here")
 	return c.JSON(http.StatusOK, types.SerializeUserResource(user, authToken))
 }
+
 func (config *Config) registerUser(c echo.Context) error {
 
 	var userInput registrationSchema
@@ -132,6 +133,21 @@ func (config *Config) registerUser(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, types.SerializeUserResource(createdUser, authToken))
+}
+
+func (config *Config) logout(c echo.Context) error {
+
+	authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
+	token := authenticatedUser.Hash
+
+	err := config.db.DeleteToken(c.Request().Context(), token)
+
+	if err != nil {
+		return serverError(c, err)
+	}
+
+	return c.NoContent(http.StatusNoContent)
+
 }
 
 func checkEmailIsUnique(c echo.Context, config Config, email string) bool {

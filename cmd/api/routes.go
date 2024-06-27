@@ -15,6 +15,8 @@ func registerApiRoutes(e *echo.Echo, config *Config) {
 	homeGroup := e.Group("/home")
 	homeGroup.Use(config.checkAuthToken)
 
+	homeGroup.POST("/logout", config.logout)
+
 	homeGroup.POST("/exams/create", config.createExam)
 	homeGroup.GET("/exams", config.getExamsList)
 	homeGroup.GET("/others_exams", config.getParticipatedExams)
