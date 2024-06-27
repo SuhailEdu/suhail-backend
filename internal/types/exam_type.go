@@ -85,6 +85,8 @@ func SerializeExamResource(exam schema.Exam, questions []schema.ExamQuestion) Ex
 		}
 
 		qs[i] = QuestionResource{
+			Id:      q.ID,
+			ExamId:  q.ExamID,
 			Title:   q.Question,
 			Options: options,
 		}
@@ -92,6 +94,8 @@ func SerializeExamResource(exam schema.Exam, questions []schema.ExamQuestion) Ex
 	}
 
 	return ExamResourceWithQuestions{
+		Id:        exam.ID,
+		UserId:    exam.UserID,
 		ExamTitle: exam.Title,
 		Status:    exam.VisibilityStatus,
 		Questions: qs,

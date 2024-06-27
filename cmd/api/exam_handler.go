@@ -15,6 +15,7 @@ import (
 	_ "github.com/thedevsaddam/govalidator"
 	_ "golang.org/x/crypto/bcrypt"
 	"net/http"
+	"net/mail"
 )
 
 func (config *Config) getExamsList(c echo.Context) error {
@@ -423,6 +424,53 @@ func (config *Config) deleteQuestion(c echo.Context) error {
 	})
 
 	return c.JSON(http.StatusNoContent, nil)
+
+}
+
+func (config *Config) inviteUsersToExam(c echo.Context) error {
+
+	var emails struct {
+		Emails []string `json:"emails"`
+	}
+
+	err := json.NewDecoder(c.Request().Body).Decode(&emails)
+	if err != nil {
+		return serverError(c, err)
+	}
+	if len(emails.Emails) == 0 {
+		return validationError(c, map[string]string{"emails": "no email address"})
+	}
+
+	for _, email := range emails.Emails {
+		_, err = mail.ParseAddress(email)
+		if err != nil {
+			return validationError(c, map[string]string{"emails": fmt.Sprintf("invalid email address: %s", email)})
+		}
+		emailExists, _ := config.db.CheckEmailUniqueness(c.Request().Context(), email)
+
+		if !emailExists {
+			return validationError(c, map[string]string{"emails": fmt.Sprintf("User with this email : %s does not exist", email)})
+		}
+	}
+
+	examId, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return badRequestError(c, err)
+	}
+
+	for _, email := range emails.Emails {
+		err = config.db.CreateExamParticipant(c.Request().Context(), schema.CreateExamParticipantParams{
+			ExamID: examId,
+			Email:  email,
+		})
+		if err != nil {
+			fmt.Println("here", email)
+			return serverError(c, err)
+		}
+
+	}
+
+	return c.JSON(http.StatusOK, emails.Emails)
 
 }
 

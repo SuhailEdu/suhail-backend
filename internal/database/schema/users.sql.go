@@ -21,8 +21,8 @@ func (q *Queries) CheckEmailUniqueness(ctx context.Context, email string) (bool,
 }
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users(id , first_name , last_name , password , email ,  created_at , updated_at)
-VALUES (uuid_generate_v4() , $1 , $2 , $3 , $4 , current_timestamp , current_timestamp)
+INSERT INTO users(id, first_name, last_name, password, email, created_at, updated_at)
+VALUES (uuid_generate_v4(), $1, $2, $3, $4, current_timestamp, current_timestamp)
 RETURNING id, first_name, last_name, email, password, email_verified_at, created_at, updated_at
 `
 
@@ -55,7 +55,10 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, first_name, last_name, email, password, email_verified_at, created_at, updated_at FROM users WHERE email = $1 LIMIT 1
+SELECT id, first_name, last_name, email, password, email_verified_at, created_at, updated_at
+FROM users
+WHERE email = $1
+LIMIT 1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
