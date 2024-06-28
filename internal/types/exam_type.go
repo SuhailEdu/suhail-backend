@@ -70,6 +70,12 @@ type ExamResource struct {
 	UpdatedAt      time.Time `json:"updated_at"`
 	QuestionsCount int64     `json:"questions_count"`
 }
+type ExamParticipant struct {
+	ID        uuid.UUID `json:"id"`
+	Email     string    `json:"email"`
+	FirstName string    `json:"first_name"`
+	LastName  string    `json:"last_name"`
+}
 
 func SerializeExamResource(exam schema.Exam, questions []schema.ExamQuestion) ExamResourceWithQuestions {
 
@@ -283,6 +289,21 @@ func SerializeSingleParicipatedExam(exam []schema.FindMyParticipatedExamRow) Exa
 		UpdatedAt: exam[0].Exam.UpdatedAt.Time,
 		Questions: qs,
 	}
+
+}
+func SerializeGetExamParticipants(participants []schema.GetExamParticipantsRow) []ExamParticipant {
+
+	ps := make([]ExamParticipant, len(participants))
+	for i, participant := range participants {
+		ps[i] = ExamParticipant{
+			ID:        participant.User.ID,
+			Email:     participant.User.Email,
+			FirstName: participant.User.FirstName,
+			LastName:  participant.User.LastName,
+		}
+	}
+
+	return ps
 
 }
 

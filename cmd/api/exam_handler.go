@@ -510,8 +510,7 @@ func (config *Config) getExamParticipants(c echo.Context) error {
 		return serverError(c, err)
 	}
 
-	return c.JSON(http.StatusOK, participants)
-
+	return dataResponse(c, types.SerializeGetExamParticipants(participants))
 }
 
 func (config *Config) removeParticipants(c echo.Context) error {
