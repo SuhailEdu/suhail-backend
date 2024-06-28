@@ -65,11 +65,23 @@ func (q *Queries) CreateExam(ctx context.Context, arg CreateExamParams) (Exam, e
 }
 
 const deleteExam = `-- name: DeleteExam :exec
+
 DELETE
 FROM exam_questions
 WHERE id = $1
 `
 
+// SELECT sqlc.embed(exams), sqlc.embed(exam_questions)
+// FROM exams
+//
+//	INNER JOIN exam_participants ON exam_participants.exam_id = exams.id
+//	LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
+//
+// WHERE exam_participants.user_id = $1
+//
+//	AND exams.id = $2
+//
+// ;
 func (q *Queries) DeleteExam(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, deleteExam, id)
 	return err
@@ -129,8 +141,8 @@ func (q *Queries) FindMyExam(ctx context.Context, arg FindMyExamParams) ([]FindM
 	return items, nil
 }
 
-const findMyParticipatedExam = `-- name: FindMyParticipatedExam :one
-SELECT exams.id, exams.user_id, title, slug, visibility_status, is_accessable, exams.created_at, exams.updated_at, exam_participants.user_id, exam_participants.exam_id, exam_participants.created_at, exam_participants.updated_at, exam_questions.id, exam_questions.exam_id, question, answers, type, exam_questions.created_at, exam_questions.updated_at
+const findMyParticipatedExam = `-- name: FindMyParticipatedExam :many
+SELECT exams.id, exams.user_id, exams.title, exams.slug, exams.visibility_status, exams.is_accessable, exams.created_at, exams.updated_at, exam_questions.id, exam_questions.exam_id, exam_questions.question, exam_questions.answers, exam_questions.type, exam_questions.created_at, exam_questions.updated_at
 FROM exams
          INNER JOIN exam_participants ON exam_participants.exam_id = exams.id
          LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
@@ -144,52 +156,44 @@ type FindMyParticipatedExamParams struct {
 }
 
 type FindMyParticipatedExamRow struct {
-	ID               uuid.UUID
-	UserID           uuid.UUID
-	Title            string
-	Slug             pgtype.Text
-	VisibilityStatus string
-	IsAccessable     pgtype.Bool
-	CreatedAt        pgtype.Timestamp
-	UpdatedAt        pgtype.Timestamp
-	UserID_2         uuid.UUID
-	ExamID           uuid.UUID
-	CreatedAt_2      pgtype.Timestamp
-	UpdatedAt_2      pgtype.Timestamp
-	ID_2             pgtype.UUID
-	ExamID_2         pgtype.UUID
-	Question         pgtype.Text
-	Answers          []byte
-	Type             pgtype.Text
-	CreatedAt_3      pgtype.Timestamp
-	UpdatedAt_3      pgtype.Timestamp
+	Exam         Exam
+	ExamQuestion ExamQuestion
 }
 
-func (q *Queries) FindMyParticipatedExam(ctx context.Context, arg FindMyParticipatedExamParams) (FindMyParticipatedExamRow, error) {
-	row := q.db.QueryRow(ctx, findMyParticipatedExam, arg.UserID, arg.ID)
-	var i FindMyParticipatedExamRow
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.Title,
-		&i.Slug,
-		&i.VisibilityStatus,
-		&i.IsAccessable,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.UserID_2,
-		&i.ExamID,
-		&i.CreatedAt_2,
-		&i.UpdatedAt_2,
-		&i.ID_2,
-		&i.ExamID_2,
-		&i.Question,
-		&i.Answers,
-		&i.Type,
-		&i.CreatedAt_3,
-		&i.UpdatedAt_3,
-	)
-	return i, err
+func (q *Queries) FindMyParticipatedExam(ctx context.Context, arg FindMyParticipatedExamParams) ([]FindMyParticipatedExamRow, error) {
+	rows, err := q.db.Query(ctx, findMyParticipatedExam, arg.UserID, arg.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FindMyParticipatedExamRow
+	for rows.Next() {
+		var i FindMyParticipatedExamRow
+		if err := rows.Scan(
+			&i.Exam.ID,
+			&i.Exam.UserID,
+			&i.Exam.Title,
+			&i.Exam.Slug,
+			&i.Exam.VisibilityStatus,
+			&i.Exam.IsAccessable,
+			&i.Exam.CreatedAt,
+			&i.Exam.UpdatedAt,
+			&i.ExamQuestion.ID,
+			&i.ExamQuestion.ExamID,
+			&i.ExamQuestion.Question,
+			&i.ExamQuestion.Answers,
+			&i.ExamQuestion.Type,
+			&i.ExamQuestion.CreatedAt,
+			&i.ExamQuestion.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getExamById = `-- name: GetExamById :one

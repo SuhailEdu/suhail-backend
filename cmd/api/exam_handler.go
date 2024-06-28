@@ -51,22 +51,27 @@ func (config *Config) getSingleExam(c echo.Context) error {
 
 	examId, err := uuid.Parse(c.Param("id"))
 	if err != nil {
-		return serverError(c, err)
+		return badRequestError(c, err)
 	}
-	fmt.Println(c.Param("id"))
 
 	exam, err := config.db.FindMyExam(c.Request().Context(), schema.FindMyExamParams{ID: examId, UserID: userId})
-	fmt.Println(exam, err)
 
-	if err != nil {
+	if len(exam) == 0 {
+		fmt.Println("Exam not found")
 		//return c.JSON(http.StatusNotFound, map[string]string{})
-		participatedExam, pErr := config.db.FindMyParticipatedExam(c.Request().Context(), schema.FindMyParticipatedExamParams{ID: examId, UserID: userId})
-		if pErr != nil {
+		participatedExam, pErr := config.db.FindMyParticipatedExam(c.Request().Context(), schema.FindMyParticipatedExamParams{
+			UserID: userId,
+			ID:     examId,
+		})
+		fmt.Println(pErr, participatedExam)
+		if len(participatedExam) == 0 {
 			return c.JSON(http.StatusNotFound, map[string]string{})
 		}
-		return dataResponse(c, participatedExam)
+		//return c.JSON(http.StatusOK, participatedExam)
+		return dataResponse(c, types.SerializeSingleParicipatedExam(participatedExam))
 
 	}
+	//fmt.Println(exam, err)
 
 	return dataResponse(c, types.SerializeSingleExam(exam))
 

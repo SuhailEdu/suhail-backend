@@ -259,6 +259,33 @@ func SerializeSingleExam(exam []schema.FindMyExamRow) ExamResourceWithQuestions 
 
 }
 
+func SerializeSingleParicipatedExam(exam []schema.FindMyParticipatedExamRow) ExamResourceWithQuestions {
+
+	qs := make([]QuestionResource, len(exam))
+	for i, ex := range exam {
+		var answers []OptionResource
+		_ = json.Unmarshal(ex.ExamQuestion.Answers, &answers)
+
+		qs[i] = QuestionResource{
+			Id:      ex.ExamQuestion.ID,
+			ExamId:  ex.ExamQuestion.ExamID,
+			Title:   ex.ExamQuestion.Question,
+			Options: answers,
+		}
+	}
+
+	return ExamResourceWithQuestions{
+		Id:        exam[0].Exam.ID,
+		UserId:    exam[0].Exam.UserID,
+		ExamTitle: exam[0].Exam.Title,
+		Status:    exam[0].Exam.VisibilityStatus,
+		CreatedAt: exam[0].Exam.CreatedAt.Time,
+		UpdatedAt: exam[0].Exam.UpdatedAt.Time,
+		Questions: qs,
+	}
+
+}
+
 //func SerializeExams(exams []schema.GetUserExamsRow  string) []ExamResource {
 
 func pgUUIDtoGoogleUUID(inputId pgtype.UUID) uuid.UUID {
