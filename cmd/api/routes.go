@@ -17,11 +17,12 @@ func registerApiRoutes(e *echo.Echo, config *Config) {
 
 	homeGroup.POST("/logout", config.logout)
 
-	homeGroup.POST("/exams/create", config.createExam)
 	homeGroup.GET("/exams", config.getExamsList)
+	homeGroup.POST("/exams/create", config.createExam)
 	homeGroup.GET("/others_exams", config.getParticipatedExams)
 	homeGroup.GET("/exams/:id", config.getSingleExam)
 	homeGroup.PATCH("/exams/:id", config.updateExam)
+	homeGroup.DELETE("/exams/:id", config.updateExam)
 
 	homeGroup.POST("/exams/:id/questions", config.addQuestionsToExam)
 	homeGroup.PATCH("/exams/:id/questions/:questionId", config.updateQuestion)

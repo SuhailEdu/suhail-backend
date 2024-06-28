@@ -64,9 +64,13 @@ WHERE exams.id = $1
 -- name: FindMyParticipatedExam :one
 SELECT *
 FROM exams
+         INNER JOIN exam_participants ON exam_participants.exam_id = exams.id
          LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
-         join exam_participants ON exam_participants.exam_id = exams.id
 WHERE exam_participants.user_id = $1
   AND exams.id = $2
 ;
 
+-- name: DeleteExam :exec
+DELETE
+FROM exam_questions
+WHERE id = $1;

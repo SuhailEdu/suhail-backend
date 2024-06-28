@@ -48,7 +48,7 @@ func (config *Config) getSingleExam(c echo.Context) error {
 
 	authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
 	userId := authenticatedUser.ID
-	//examId := pgtype.UUID{Bytes: [16]byte([]byte(c.Param("id"))), Valid: true}
+
 	examId, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		return serverError(c, err)
@@ -59,7 +59,7 @@ func (config *Config) getSingleExam(c echo.Context) error {
 	fmt.Println(exam, err)
 
 	if err != nil {
-		return c.JSON(http.StatusNotFound, map[string]string{})
+		//return c.JSON(http.StatusNotFound, map[string]string{})
 		participatedExam, pErr := config.db.FindMyParticipatedExam(c.Request().Context(), schema.FindMyParticipatedExamParams{ID: examId, UserID: userId})
 		if pErr != nil {
 			return c.JSON(http.StatusNotFound, map[string]string{})
@@ -207,6 +207,21 @@ func (config *Config) updateExam(c echo.Context) error {
 	}
 
 	return dataResponse(c, types.SerializeUpdateExam(exam))
+
+}
+
+func (config *Config) deleteExam(c echo.Context) error {
+	examId, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return badRequestError(c, err)
+	}
+
+	err = config.db.DeleteExam(c.Request().Context(), examId)
+	if err != nil {
+		return serverError(c, err)
+	}
+
+	return c.NoContent(http.StatusNoContent)
 
 }
 func (config *Config) updateQuestion(c echo.Context) error {

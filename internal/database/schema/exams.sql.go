@@ -64,6 +64,17 @@ func (q *Queries) CreateExam(ctx context.Context, arg CreateExamParams) (Exam, e
 	return i, err
 }
 
+const deleteExam = `-- name: DeleteExam :exec
+DELETE
+FROM exam_questions
+WHERE id = $1
+`
+
+func (q *Queries) DeleteExam(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deleteExam, id)
+	return err
+}
+
 const findMyExam = `-- name: FindMyExam :many
 SELECT exams.id, exams.user_id, exams.title, exams.slug, exams.visibility_status, exams.is_accessable, exams.created_at, exams.updated_at, exam_questions.id, exam_questions.exam_id, exam_questions.question, exam_questions.answers, exam_questions.type, exam_questions.created_at, exam_questions.updated_at
 FROM exams
@@ -119,10 +130,10 @@ func (q *Queries) FindMyExam(ctx context.Context, arg FindMyExamParams) ([]FindM
 }
 
 const findMyParticipatedExam = `-- name: FindMyParticipatedExam :one
-SELECT exams.id, exams.user_id, title, slug, visibility_status, is_accessable, exams.created_at, exams.updated_at, exam_questions.id, exam_questions.exam_id, question, answers, type, exam_questions.created_at, exam_questions.updated_at, exam_participants.user_id, exam_participants.exam_id, exam_participants.created_at, exam_participants.updated_at
+SELECT exams.id, exams.user_id, title, slug, visibility_status, is_accessable, exams.created_at, exams.updated_at, exam_participants.user_id, exam_participants.exam_id, exam_participants.created_at, exam_participants.updated_at, exam_questions.id, exam_questions.exam_id, question, answers, type, exam_questions.created_at, exam_questions.updated_at
 FROM exams
+         INNER JOIN exam_participants ON exam_participants.exam_id = exams.id
          LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
-         join exam_participants ON exam_participants.exam_id = exams.id
 WHERE exam_participants.user_id = $1
   AND exams.id = $2
 `
@@ -141,15 +152,15 @@ type FindMyParticipatedExamRow struct {
 	IsAccessable     pgtype.Bool
 	CreatedAt        pgtype.Timestamp
 	UpdatedAt        pgtype.Timestamp
+	UserID_2         uuid.UUID
+	ExamID           uuid.UUID
+	CreatedAt_2      pgtype.Timestamp
+	UpdatedAt_2      pgtype.Timestamp
 	ID_2             pgtype.UUID
-	ExamID           pgtype.UUID
+	ExamID_2         pgtype.UUID
 	Question         pgtype.Text
 	Answers          []byte
 	Type             pgtype.Text
-	CreatedAt_2      pgtype.Timestamp
-	UpdatedAt_2      pgtype.Timestamp
-	UserID_2         uuid.UUID
-	ExamID_2         uuid.UUID
 	CreatedAt_3      pgtype.Timestamp
 	UpdatedAt_3      pgtype.Timestamp
 }
@@ -166,15 +177,15 @@ func (q *Queries) FindMyParticipatedExam(ctx context.Context, arg FindMyParticip
 		&i.IsAccessable,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.ID_2,
+		&i.UserID_2,
 		&i.ExamID,
+		&i.CreatedAt_2,
+		&i.UpdatedAt_2,
+		&i.ID_2,
+		&i.ExamID_2,
 		&i.Question,
 		&i.Answers,
 		&i.Type,
-		&i.CreatedAt_2,
-		&i.UpdatedAt_2,
-		&i.UserID_2,
-		&i.ExamID_2,
 		&i.CreatedAt_3,
 		&i.UpdatedAt_3,
 	)
