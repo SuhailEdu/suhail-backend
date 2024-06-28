@@ -494,6 +494,61 @@ func (config *Config) inviteUsersToExam(c echo.Context) error {
 
 }
 
+func (config *Config) removeParticipants(c echo.Context) error {
+
+	examId, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return badRequestError(c, err)
+	}
+
+	isAuthor, _ := isExamAuthor(c, config, examId)
+	if !isAuthor {
+		return unAuthorizedError(c, errors.New("unauthorized access"))
+	}
+
+	var emails struct {
+		Emails []string `json:"emails"`
+	}
+
+	err = json.NewDecoder(c.Request().Body).Decode(&emails)
+	if err != nil {
+		return serverError(c, err)
+	}
+	if len(emails.Emails) == 0 {
+		return validationError(c, map[string]string{"emails": "no email address"})
+	}
+
+	for _, email := range emails.Emails {
+		_, err = mail.ParseAddress(email)
+		if err != nil {
+			return validationError(c, map[string]string{"emails": fmt.Sprintf("invalid email address: %s", email)})
+		}
+		emailExists, _ := config.db.CheckEmailUniqueness(c.Request().Context(), email)
+
+		if !emailExists {
+			return validationError(c, map[string]string{"emails": fmt.Sprintf("User with this email : %s does not exist", email)})
+		}
+	}
+
+	//myUd, _ := uuid.Parse("2b2258ab-f848-405b-a95c-0901e682d9e7")
+	myUd, _ := uuid.FromBytes([]byte("2b2258ab-f848-405b-a95c-0901e682d9e7"))
+
+	fmt.Println(myUd.String())
+
+	err = config.db.DeleteParticipants(c.Request().Context(), schema.DeleteParticipantsParams{
+
+		ExamID: examId,
+		//Column2: []string{"client2@gmail.com"},
+		Emails: []uuid.UUID{myUd},
+	})
+	if err != nil {
+		return serverError(c, err)
+	}
+
+	return c.JSON(http.StatusOK, emails.Emails)
+
+}
+
 func isExamAuthor(c echo.Context, config *Config, examId uuid.UUID) (bool, schema.Exam) {
 
 	exam, err := config.db.GetExamById(c.Request().Context(), examId)

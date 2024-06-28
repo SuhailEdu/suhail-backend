@@ -70,13 +70,6 @@ WHERE exam_participants.user_id = $1
   AND exams.id = $2
 ;
 
--- SELECT sqlc.embed(exams), sqlc.embed(exam_questions)
--- FROM exams
---          INNER JOIN exam_participants ON exam_participants.exam_id = exams.id
---          LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
--- WHERE exam_participants.user_id = $1
---   AND exams.id = $2
--- ;
 
 -- name: DeleteExam :exec
 DELETE

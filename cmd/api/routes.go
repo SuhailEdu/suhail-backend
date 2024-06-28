@@ -24,6 +24,8 @@ func registerApiRoutes(e *echo.Echo, config *Config) {
 	homeGroup.PATCH("/exams/:id", config.updateExam)
 	homeGroup.DELETE("/exams/:id", config.updateExam)
 
+	homeGroup.DELETE("/exams/:id/removeParticipants", config.removeParticipants)
+
 	homeGroup.POST("/exams/:id/questions", config.addQuestionsToExam)
 	homeGroup.PATCH("/exams/:id/questions/:questionId", config.updateQuestion)
 	homeGroup.DELETE("/exams/:id/questions/:questionId", config.deleteQuestion)

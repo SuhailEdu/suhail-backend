@@ -30,3 +30,22 @@ func (q *Queries) CreateExamParticipant(ctx context.Context, arg CreateExamParti
 	_, err := q.db.Exec(ctx, createExamParticipant, arg.ExamID, arg.Email)
 	return err
 }
+
+const deleteParticipants = `-- name: DeleteParticipants :exec
+DELETE
+FROM exam_participants
+WHERE exam_id = $1
+  AND user_id IN ($2)
+`
+
+type DeleteParticipantsParams struct {
+	ExamID uuid.UUID
+	Emails []uuid.UUID
+}
+
+// AND user_id = ANY ($2::int[])
+// AND user_id IN (SELECT distinct id FROM users WHERE users.email in (sqlc.slice(emails)));
+func (q *Queries) DeleteParticipants(ctx context.Context, arg DeleteParticipantsParams) error {
+	_, err := q.db.Exec(ctx, deleteParticipants, arg.ExamID, arg.Emails)
+	return err
+}

@@ -65,23 +65,11 @@ func (q *Queries) CreateExam(ctx context.Context, arg CreateExamParams) (Exam, e
 }
 
 const deleteExam = `-- name: DeleteExam :exec
-
 DELETE
 FROM exam_questions
 WHERE id = $1
 `
 
-// SELECT sqlc.embed(exams), sqlc.embed(exam_questions)
-// FROM exams
-//
-//	INNER JOIN exam_participants ON exam_participants.exam_id = exams.id
-//	LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
-//
-// WHERE exam_participants.user_id = $1
-//
-//	AND exams.id = $2
-//
-// ;
 func (q *Queries) DeleteExam(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, deleteExam, id)
 	return err
