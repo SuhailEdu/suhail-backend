@@ -494,6 +494,26 @@ func (config *Config) inviteUsersToExam(c echo.Context) error {
 
 }
 
+func (config *Config) getExamParticipants(c echo.Context) error {
+	examId, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return badRequestError(c, err)
+	}
+
+	isAuthor, _ := isExamAuthor(c, config, examId)
+	if !isAuthor {
+		return unAuthorizedError(c, errors.New("unauthorized access"))
+	}
+
+	participants, err := config.db.GetExamParticipants(c.Request().Context(), examId)
+	if err != nil {
+		return serverError(c, err)
+	}
+
+	return c.JSON(http.StatusOK, participants)
+
+}
+
 func (config *Config) removeParticipants(c echo.Context) error {
 
 	examId, err := uuid.Parse(c.Param("id"))
@@ -536,11 +556,10 @@ func (config *Config) removeParticipants(c echo.Context) error {
 	fmt.Println(myUd.String())
 
 	err = config.db.DeleteParticipants(c.Request().Context(), schema.DeleteParticipantsParams{
-
 		ExamID: examId,
-		//Column2: []string{"client2@gmail.com"},
-		Emails: []uuid.UUID{myUd},
+		Emails: []string{"client2@gmail.com"},
 	})
+
 	if err != nil {
 		return serverError(c, err)
 	}

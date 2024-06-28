@@ -34,18 +34,56 @@ func (q *Queries) CreateExamParticipant(ctx context.Context, arg CreateExamParti
 const deleteParticipants = `-- name: DeleteParticipants :exec
 DELETE
 FROM exam_participants
-WHERE exam_id = $1
-  AND user_id IN ($2)
+WHERE user_id = ANY (SELECT id FROM users WHERE users.email = ANY ($2))
+  AND exam_id = $1
 `
 
 type DeleteParticipantsParams struct {
 	ExamID uuid.UUID
-	Emails []uuid.UUID
+	Emails []string
 }
 
-// AND user_id = ANY ($2::int[])
-// AND user_id IN (SELECT distinct id FROM users WHERE users.email in (sqlc.slice(emails)));
 func (q *Queries) DeleteParticipants(ctx context.Context, arg DeleteParticipantsParams) error {
 	_, err := q.db.Exec(ctx, deleteParticipants, arg.ExamID, arg.Emails)
 	return err
+}
+
+const getExamParticipants = `-- name: GetExamParticipants :many
+SELECT users.id, users.first_name, users.last_name, users.email, users.password, users.email_verified_at, users.created_at, users.updated_at
+FROM exam_participants
+         INNER JOIN users on users.id = exam_participants.user_id
+WHERE exam_id = $1
+`
+
+type GetExamParticipantsRow struct {
+	User User
+}
+
+func (q *Queries) GetExamParticipants(ctx context.Context, examID uuid.UUID) ([]GetExamParticipantsRow, error) {
+	rows, err := q.db.Query(ctx, getExamParticipants, examID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetExamParticipantsRow
+	for rows.Next() {
+		var i GetExamParticipantsRow
+		if err := rows.Scan(
+			&i.User.ID,
+			&i.User.FirstName,
+			&i.User.LastName,
+			&i.User.Email,
+			&i.User.Password,
+			&i.User.EmailVerifiedAt,
+			&i.User.CreatedAt,
+			&i.User.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

@@ -10,9 +10,14 @@ ON CONFLICT (user_id , exam_id) DO NOTHING;
 -- name: DeleteParticipants :exec
 DELETE
 FROM exam_participants
+WHERE user_id = ANY (SELECT id FROM users WHERE users.email = ANY (sqlc.slice(emails)))
+  AND exam_id = $1
+;
+
+-- name: GetExamParticipants :many
+SELECT sqlc.embed(users)
+FROM exam_participants
+         INNER JOIN users on users.id = exam_participants.user_id
 WHERE exam_id = $1
---   AND user_id = ANY ($2::int[])
---   AND user_id IN (SELECT distinct id FROM users WHERE users.email in (sqlc.slice(emails)));
-  AND user_id IN (sqlc.slice(emails));
 ;
 

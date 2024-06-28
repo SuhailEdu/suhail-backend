@@ -24,13 +24,13 @@ func registerApiRoutes(e *echo.Echo, config *Config) {
 	homeGroup.PATCH("/exams/:id", config.updateExam)
 	homeGroup.DELETE("/exams/:id", config.updateExam)
 
+	homeGroup.GET("/exams/:id/participants", config.getExamParticipants)
+	homeGroup.POST("/exams/:id/invite", config.inviteUsersToExam)
 	homeGroup.DELETE("/exams/:id/removeParticipants", config.removeParticipants)
 
 	homeGroup.POST("/exams/:id/questions", config.addQuestionsToExam)
 	homeGroup.PATCH("/exams/:id/questions/:questionId", config.updateQuestion)
 	homeGroup.DELETE("/exams/:id/questions/:questionId", config.deleteQuestion)
-
-	homeGroup.POST("/exams/:id/invite", config.inviteUsersToExam)
 
 	homeGroup.GET("/hello", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")

@@ -172,12 +172,10 @@ func createUserToken(user schema.User, c echo.Context, config *Config) (string, 
 
 	hash := sha256.Sum256([]byte(plainText))
 
-	fmt.Println(pgtype.Timestamptz{Time: time.Now()})
-
 	_, err = config.db.CreateUserToken(c.Request().Context(), schema.CreateUserTokenParams{
 		Hash:   hash[:],
 		UserID: user.ID,
-		Expiry: pgtype.Timestamp(pgtype.Timestamptz{Time: time.Now(), Valid: true}),
+		Expiry: pgtype.Timestamp(pgtype.Timestamptz{Time: time.Now().Add(30 * 24 * time.Hour), Valid: true}),
 		Scope:  "login",
 	})
 
