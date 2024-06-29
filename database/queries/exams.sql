@@ -19,10 +19,11 @@ RETURNING *
 
 
 -- name: GetUserExams :many
-SELECT exams.*, COUNT(exam_questions.*) as questions_count
+SELECT exams.*, COUNT(exam_participants.*) as particpants_count, COUNT(exam_questions.*) as questions_count
 FROM exams
          LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
-WHERE user_id = $1
+         LEFT JOIN exam_participants ON exam_participants.exam_id = exams.id
+WHERE exams.user_id = $1
 GROUP BY exams.id
 ORDER BY exams.created_at DESC
 ;

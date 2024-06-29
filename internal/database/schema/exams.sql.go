@@ -293,10 +293,11 @@ func (q *Queries) GetParticipatedExams(ctx context.Context, userID uuid.UUID) ([
 }
 
 const getUserExams = `-- name: GetUserExams :many
-SELECT exams.id, exams.user_id, exams.title, exams.slug, exams.visibility_status, exams.is_accessable, exams.created_at, exams.updated_at, COUNT(exam_questions.*) as questions_count
+SELECT exams.id, exams.user_id, exams.title, exams.slug, exams.visibility_status, exams.is_accessable, exams.created_at, exams.updated_at, COUNT(exam_participants.*) as particpants_count, COUNT(exam_questions.*) as questions_count
 FROM exams
          LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
-WHERE user_id = $1
+         LEFT JOIN exam_participants ON exam_participants.exam_id = exams.id
+WHERE exams.user_id = $1
 GROUP BY exams.id
 ORDER BY exams.created_at DESC
 `
@@ -310,6 +311,7 @@ type GetUserExamsRow struct {
 	IsAccessable     pgtype.Bool
 	CreatedAt        pgtype.Timestamp
 	UpdatedAt        pgtype.Timestamp
+	ParticpantsCount int64
 	QuestionsCount   int64
 }
 
@@ -331,6 +333,7 @@ func (q *Queries) GetUserExams(ctx context.Context, userID uuid.UUID) ([]GetUser
 			&i.IsAccessable,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ParticpantsCount,
 			&i.QuestionsCount,
 		); err != nil {
 			return nil, err

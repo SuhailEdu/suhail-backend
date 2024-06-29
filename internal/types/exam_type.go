@@ -64,13 +64,14 @@ type ExamResourceWithQuestions struct {
 }
 
 type ExamResource struct {
-	Id             uuid.UUID `json:"id"`
-	UserId         uuid.UUID `json:"user_id"`
-	ExamTitle      string    `json:"exam_title"`
-	Status         string    `json:"status"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
-	QuestionsCount int64     `json:"questions_count"`
+	Id                uuid.UUID `json:"id"`
+	UserId            uuid.UUID `json:"user_id"`
+	ExamTitle         string    `json:"exam_title"`
+	Status            string    `json:"status"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
+	QuestionsCount    int64     `json:"questions_count"`
+	ParticipantsCount int64     `json:"participants_count"`
 }
 type ExamParticipant struct {
 	ID        uuid.UUID `json:"id"`
@@ -159,13 +160,14 @@ func SerializeExams(exams []schema.GetUserExamsRow) []ExamResource {
 
 	for _, exam := range exams {
 		examResource = append(examResource, ExamResource{
-			Id:             exam.ID,
-			UserId:         exam.UserID,
-			ExamTitle:      exam.Title,
-			Status:         exam.VisibilityStatus,
-			QuestionsCount: exam.QuestionsCount,
-			CreatedAt:      exam.CreatedAt.Time,
-			UpdatedAt:      exam.UpdatedAt.Time,
+			Id:                exam.ID,
+			UserId:            exam.UserID,
+			ExamTitle:         exam.Title,
+			Status:            exam.VisibilityStatus,
+			QuestionsCount:    exam.QuestionsCount,
+			ParticipantsCount: exam.ParticpantsCount,
+			CreatedAt:         exam.CreatedAt.Time,
+			UpdatedAt:         exam.UpdatedAt.Time,
 		})
 	}
 
