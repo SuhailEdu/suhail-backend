@@ -5,9 +5,9 @@ import (
 	"github.com/SuhailEdu/suhail-backend/internal/database/schema"
 	_ "github.com/SuhailEdu/suhail-backend/internal/database/schema"
 	"github.com/jackc/pgx/v5"
-	_ "github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/lib/pq"
 	"log"
 	"os"
@@ -27,7 +27,7 @@ func main() {
 
 	// create the db connection
 	dbUrl := os.Getenv("DATABASE_URL")
-	//connection, err := sql.Open("postgres", dbUrl)
+
 	conn, err := pgx.Connect(context.Background(), dbUrl)
 	if err != nil {
 		log.Fatal(err)
@@ -41,7 +41,14 @@ func main() {
 
 	e := echo.New()
 
+	e.Use(middleware.CORS())
+
+	//e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+	//	AllowOrigins: []string{"*"},
+	//	AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
+	//}))
+
 	registerApiRoutes(e, config)
 
-	e.Logger.Fatal(e.Start(":1323"))
+	e.Logger.Fatal(e.Start(":4000"))
 }
