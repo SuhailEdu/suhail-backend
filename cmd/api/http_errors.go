@@ -23,8 +23,6 @@ func badRequestError(c echo.Context, err error) error {
 
 func validationError(c echo.Context, err interface{}) error {
 
-	log.Println(err)
-
 	errors := map[string]interface{}{"validationError": err}
 	return c.JSON(http.StatusUnprocessableEntity, errors)
 }

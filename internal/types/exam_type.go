@@ -15,6 +15,7 @@ type OptionInput struct {
 
 type QuestionInput struct {
 	Title   string        `json:"title"`
+	Type    string        `json:"type"`
 	Options []OptionInput `json:"options"`
 }
 
@@ -48,6 +49,7 @@ type QuestionResource struct {
 	Id      uuid.UUID        `json:"id"`
 	ExamId  uuid.UUID        `json:"exam_id"`
 	Title   string           `json:"title"`
+	Type    string           `json:"type"`
 	Options []OptionResource `json:"options"`
 }
 
@@ -95,6 +97,7 @@ func SerializeExamResource(exam schema.Exam, questions []schema.ExamQuestion) Ex
 			ExamId:  q.ExamID,
 			Title:   q.Question,
 			Options: options,
+			Type:    q.Type,
 		}
 
 	}
@@ -105,6 +108,8 @@ func SerializeExamResource(exam schema.Exam, questions []schema.ExamQuestion) Ex
 		ExamTitle: exam.Title,
 		Status:    exam.VisibilityStatus,
 		Questions: qs,
+		CreatedAt: exam.CreatedAt.Time,
+		UpdatedAt: exam.UpdatedAt.Time,
 	}
 
 }
@@ -127,6 +132,7 @@ func examSchemaToExamResource(exam schema.Exam, questions []schema.ExamQuestion)
 		questionsResource = append(questionsResource, QuestionResource{
 			Title:   q.Question,
 			Options: options,
+			Type:    q.Type,
 		})
 
 	}
@@ -135,6 +141,8 @@ func examSchemaToExamResource(exam schema.Exam, questions []schema.ExamQuestion)
 		ExamTitle: exam.Title,
 		Status:    exam.VisibilityStatus,
 		Questions: questionsResource,
+		CreatedAt: exam.CreatedAt.Time,
+		UpdatedAt: exam.UpdatedAt.Time,
 	}, nil
 
 }
@@ -156,6 +164,8 @@ func SerializeExams(exams []schema.GetUserExamsRow) []ExamResource {
 			ExamTitle:      exam.Title,
 			Status:         exam.VisibilityStatus,
 			QuestionsCount: exam.QuestionsCount,
+			CreatedAt:      exam.CreatedAt.Time,
+			UpdatedAt:      exam.UpdatedAt.Time,
 		})
 	}
 
@@ -180,6 +190,8 @@ func SerializeParticipatedExams(exams []schema.GetParticipatedExamsRow) []ExamRe
 			ExamTitle:      exam.Title,
 			Status:         exam.VisibilityStatus,
 			QuestionsCount: exam.QuestionsCount,
+			CreatedAt:      exam.CreatedAt.Time,
+			UpdatedAt:      exam.UpdatedAt.Time,
 		})
 	}
 
@@ -213,6 +225,7 @@ func SerializeCreateQuestion(question schema.ExamQuestion) QuestionResource {
 		ExamId:  question.ExamID,
 		Title:   question.Question,
 		Options: options,
+		Type:    question.Type,
 	}
 
 }
@@ -234,6 +247,7 @@ func SerializeUpdateQuestion(question QuestionInput, questionId uuid.UUID, examI
 		ExamId:  examId,
 		Title:   question.Title,
 		Options: options,
+		Type:    question.Type,
 	}
 
 }
@@ -250,6 +264,7 @@ func SerializeSingleExam(exam []schema.FindMyExamRow) ExamResourceWithQuestions 
 			ExamId:  ex.ExamQuestion.ExamID,
 			Title:   ex.ExamQuestion.Question,
 			Options: answers,
+			Type:    ex.ExamQuestion.Type,
 		}
 	}
 
@@ -277,6 +292,7 @@ func SerializeSingleParicipatedExam(exam []schema.FindMyParticipatedExamRow) Exa
 			ExamId:  ex.ExamQuestion.ExamID,
 			Title:   ex.ExamQuestion.Question,
 			Options: answers,
+			Type:    ex.ExamQuestion.Type,
 		}
 	}
 
