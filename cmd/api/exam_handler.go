@@ -12,7 +12,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v4"
 	"github.com/thedevsaddam/govalidator"
-	_ "github.com/thedevsaddam/govalidator"
 	_ "golang.org/x/crypto/bcrypt"
 	"net/http"
 	"net/mail"
@@ -564,6 +563,73 @@ func (config *Config) removeParticipants(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, emails.Emails)
+
+}
+
+func (config *Config) checkExamTitle(c echo.Context) error {
+	var examSchema types.ExamInput
+
+	rules := govalidator.MapData{
+		"exam_title": []string{"required", "min:4", "max:30"},
+	}
+
+	opts := govalidator.Options{
+		Request: c.Request(), // request object
+		Rules:   rules,       // rules map
+		Data:    &examSchema,
+	}
+	// Create a new validator instance
+	v := govalidator.New(opts)
+	e := v.ValidateJSON()
+
+	if len(e) > 0 {
+		return validationError(c, e)
+	}
+
+	authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
+
+	examTitleExists, _ := config.db.CheckExamTitleExists(c.Request().Context(), schema.CheckExamTitleExistsParams{
+		Title:  examSchema.ExamTitle,
+		UserID: authenticatedUser.ID,
+	})
+	if examTitleExists {
+		return validationError(c, map[string]interface{}{
+			"exam_title": "You already have an exam with this title.",
+		})
+	}
+
+	return c.NoContent(http.StatusOK)
+
+}
+
+func (config *Config) checkExamQuestions(c echo.Context) error {
+	var examSchema types.ExamInput
+
+	rules := govalidator.MapData{
+		"questions": []string{"required"},
+	}
+
+	opts := govalidator.Options{
+		Request: c.Request(), // request object
+		Rules:   rules,       // rules map
+		Data:    &examSchema,
+	}
+	// Create a new validator instance
+	v := govalidator.New(opts)
+	e := v.ValidateJSON()
+
+	if len(e) > 0 {
+		return validationError(c, e)
+	}
+
+	isCorrect, questionErrors := validations.ValidateQuestions(examSchema.Questions...)
+	if !isCorrect {
+		return validationError(c, map[string]interface{}{
+			"questions": questionErrors,
+		})
+	}
+
+	return c.NoContent(http.StatusOK)
 
 }
 
