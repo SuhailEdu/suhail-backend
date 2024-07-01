@@ -139,7 +139,7 @@ WHERE exam_participants.user_id = $1
 `
 
 type FindMyParticipatedExamParams struct {
-	UserID uuid.UUID
+	UserID pgtype.UUID
 	ID     uuid.UUID
 }
 
@@ -262,7 +262,7 @@ type GetParticipatedExamsRow struct {
 }
 
 // WHERE user_id = $1
-func (q *Queries) GetParticipatedExams(ctx context.Context, userID uuid.UUID) ([]GetParticipatedExamsRow, error) {
+func (q *Queries) GetParticipatedExams(ctx context.Context, userID pgtype.UUID) ([]GetParticipatedExamsRow, error) {
 	rows, err := q.db.Query(ctx, getParticipatedExams, userID)
 	if err != nil {
 		return nil, err

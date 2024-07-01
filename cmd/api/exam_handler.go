@@ -34,7 +34,7 @@ func (config *Config) getParticipatedExams(c echo.Context) error {
 
 	authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
 	userId := authenticatedUser.ID
-	exams, err := config.db.GetParticipatedExams(c.Request().Context(), userId)
+	exams, err := config.db.GetParticipatedExams(c.Request().Context(), pgtype.UUID{Bytes: userId, Valid: true})
 	if err != nil {
 		return serverError(c, err)
 	}
@@ -59,7 +59,7 @@ func (config *Config) getSingleExam(c echo.Context) error {
 		fmt.Println("Exam not found")
 		//return c.JSON(http.StatusNotFound, map[string]string{})
 		participatedExam, pErr := config.db.FindMyParticipatedExam(c.Request().Context(), schema.FindMyParticipatedExamParams{
-			UserID: userId,
+			UserID: pgtype.UUID{Bytes: userId, Valid: true},
 			ID:     examId,
 		})
 		fmt.Println(pErr, participatedExam)
@@ -465,11 +465,11 @@ func (config *Config) inviteUsersToExam(c echo.Context) error {
 		if err != nil {
 			return validationError(c, map[string]string{"emails": fmt.Sprintf("invalid email address: %s", email)})
 		}
-		emailExists, _ := config.db.CheckEmailUniqueness(c.Request().Context(), email)
-
-		if !emailExists {
-			return validationError(c, map[string]string{"emails": fmt.Sprintf("User with this email : %s does not exist", email)})
-		}
+		//emailExists, _ := config.db.CheckEmailUniqueness(c.Request().Context(), email)
+		//
+		//if !emailExists {
+		//	return validationError(c, map[string]string{"emails": fmt.Sprintf("User with this email : %s does not exist", email)})
+		//}
 	}
 
 	examId, err := uuid.Parse(c.Param("id"))
@@ -481,6 +481,7 @@ func (config *Config) inviteUsersToExam(c echo.Context) error {
 		err = config.db.CreateExamParticipant(c.Request().Context(), schema.CreateExamParticipantParams{
 			ExamID: examId,
 			Email:  email,
+			Status: "pending",
 		})
 		if err != nil {
 			fmt.Println("here", email)

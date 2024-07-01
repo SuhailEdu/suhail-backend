@@ -27,13 +27,15 @@ CREATE TABLE IF NOT EXISTS exam_questions
 
 CREATE TABLE IF NOT EXISTS exam_participants
 (
-    user_id    UUId      NOT NULL REFERENCES users ON DELETE CASCADE,
+    user_id    UUId REFERENCES users ON DELETE CASCADE,
     exam_id    UUId      NOT NULL REFERENCES exams ON DELETE CASCADE,
+    email      citext    NOT NULL,
+    status     text      NOT NULL,
 
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP NOT NULL DEFAULT now(),
 
-    PRIMARY KEY (user_id, exam_id)
+    PRIMARY KEY (email, exam_id)
 );
 
 

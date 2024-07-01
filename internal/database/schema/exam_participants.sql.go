@@ -12,22 +12,19 @@ import (
 )
 
 const createExamParticipant = `-- name: CreateExamParticipant :exec
-INSERT INTO exam_participants (exam_id, user_id)
-VALUES ($1,
-        (SELECT (id)
-         FROM users
-         WHERE email = $2
-         LIMIT 1))
-ON CONFLICT (user_id , exam_id) DO NOTHING
+INSERT INTO exam_participants (exam_id, email, status)
+VALUES ($1, $2, $3)
+ON CONFLICT (email , exam_id) DO NOTHING
 `
 
 type CreateExamParticipantParams struct {
 	ExamID uuid.UUID
 	Email  string
+	Status string
 }
 
 func (q *Queries) CreateExamParticipant(ctx context.Context, arg CreateExamParticipantParams) error {
-	_, err := q.db.Exec(ctx, createExamParticipant, arg.ExamID, arg.Email)
+	_, err := q.db.Exec(ctx, createExamParticipant, arg.ExamID, arg.Email, arg.Status)
 	return err
 }
 

@@ -21,8 +21,10 @@ type Exam struct {
 }
 
 type ExamParticipant struct {
-	UserID    uuid.UUID
+	UserID    pgtype.UUID
 	ExamID    uuid.UUID
+	Email     string
+	Status    string
 	CreatedAt pgtype.Timestamp
 	UpdatedAt pgtype.Timestamp
 }
