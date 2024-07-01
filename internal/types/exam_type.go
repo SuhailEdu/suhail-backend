@@ -78,6 +78,7 @@ type ExamParticipant struct {
 	Email     string    `json:"email"`
 	FirstName string    `json:"first_name"`
 	LastName  string    `json:"last_name"`
+	Status    string    `json:"status"`
 }
 
 func SerializeExamResource(exam schema.Exam, questions []schema.ExamQuestion) ExamResourceWithQuestions {
@@ -313,11 +314,13 @@ func SerializeGetExamParticipants(participants []schema.GetExamParticipantsRow) 
 
 	ps := make([]ExamParticipant, len(participants))
 	for i, participant := range participants {
+		uuidValue, _ := uuid.FromBytes(participant.ID.Bytes[:])
 		ps[i] = ExamParticipant{
-			ID:        participant.User.ID,
-			Email:     participant.User.Email,
-			FirstName: participant.User.FirstName,
-			LastName:  participant.User.LastName,
+			ID:        uuidValue,
+			Email:     participant.Email,
+			FirstName: participant.FirstName.String,
+			LastName:  participant.LastName.String,
+			Status:    participant.Status,
 		}
 	}
 

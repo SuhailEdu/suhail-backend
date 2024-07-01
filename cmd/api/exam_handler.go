@@ -495,6 +495,7 @@ func (config *Config) inviteUsersToExam(c echo.Context) error {
 }
 
 func (config *Config) getExamParticipants(c echo.Context) error {
+	fmt.Println("psdfj")
 	examId, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		return badRequestError(c, err)
@@ -509,6 +510,8 @@ func (config *Config) getExamParticipants(c echo.Context) error {
 	if err != nil {
 		return serverError(c, err)
 	}
+
+	fmt.Println(participants)
 
 	return dataResponse(c, types.SerializeGetExamParticipants(participants))
 }

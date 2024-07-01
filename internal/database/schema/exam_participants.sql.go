@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createExamParticipant = `-- name: CreateExamParticipant :exec
@@ -46,14 +47,23 @@ func (q *Queries) DeleteParticipants(ctx context.Context, arg DeleteParticipants
 }
 
 const getExamParticipants = `-- name: GetExamParticipants :many
-SELECT users.id, users.first_name, users.last_name, users.email, users.password, users.email_verified_at, users.created_at, users.updated_at
+SELECT exam_participants.email, exam_participants.status, users.id, users.first_name, users.last_name, users.email, users.password, users.email_verified_at, users.created_at, users.updated_at
 FROM exam_participants
-         INNER JOIN users on users.id = exam_participants.user_id
+         LEFT JOIN users on users.id = exam_participants.user_id
 WHERE exam_id = $1
 `
 
 type GetExamParticipantsRow struct {
-	User User
+	Email           string
+	Status          string
+	ID              pgtype.UUID
+	FirstName       pgtype.Text
+	LastName        pgtype.Text
+	Email_2         pgtype.Text
+	Password        []byte
+	EmailVerifiedAt pgtype.Timestamp
+	CreatedAt       pgtype.Timestamp
+	UpdatedAt       pgtype.Timestamp
 }
 
 func (q *Queries) GetExamParticipants(ctx context.Context, examID uuid.UUID) ([]GetExamParticipantsRow, error) {
@@ -66,14 +76,16 @@ func (q *Queries) GetExamParticipants(ctx context.Context, examID uuid.UUID) ([]
 	for rows.Next() {
 		var i GetExamParticipantsRow
 		if err := rows.Scan(
-			&i.User.ID,
-			&i.User.FirstName,
-			&i.User.LastName,
-			&i.User.Email,
-			&i.User.Password,
-			&i.User.EmailVerifiedAt,
-			&i.User.CreatedAt,
-			&i.User.UpdatedAt,
+			&i.Email,
+			&i.Status,
+			&i.ID,
+			&i.FirstName,
+			&i.LastName,
+			&i.Email_2,
+			&i.Password,
+			&i.EmailVerifiedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}

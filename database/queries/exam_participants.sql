@@ -11,9 +11,9 @@ WHERE user_id = ANY (SELECT id FROM users WHERE users.email = ANY (sqlc.slice(em
 ;
 
 -- name: GetExamParticipants :many
-SELECT sqlc.embed(users)
+SELECT exam_participants.email, exam_participants.status, users.*
 FROM exam_participants
-         INNER JOIN users on users.id = exam_participants.user_id
+         LEFT JOIN users on users.id = exam_participants.user_id
 WHERE exam_id = $1
 ;
 
