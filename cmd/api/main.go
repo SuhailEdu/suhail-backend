@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	"github.com/SuhailEdu/suhail-backend/internal/database/schema"
-	_ "github.com/SuhailEdu/suhail-backend/internal/database/schema"
-	"github.com/jackc/pgx/v5"
+	_ "github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -28,9 +29,9 @@ func main() {
 	// create the db connection
 	dbUrl := os.Getenv("DATABASE_URL")
 
-	conn, err := pgx.Connect(context.Background(), dbUrl)
+	conn, err := pgxpool.New(context.Background(), dbUrl)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Unable to connect to create pool: %v", err)
 	}
 
 	queries := schema.New(conn)
@@ -42,11 +43,6 @@ func main() {
 	e := echo.New()
 
 	e.Use(middleware.CORS())
-
-	//e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-	//	AllowOrigins: []string{"*"},
-	//	AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept},
-	//}))
 
 	registerApiRoutes(e, config)
 
