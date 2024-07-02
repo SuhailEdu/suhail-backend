@@ -351,7 +351,7 @@ func (config *Config) addQuestionsToExam(c echo.Context) error {
 	}
 
 	if alreadyExists {
-		return c.JSON(http.StatusConflict, map[string]string{
+		return c.JSON(http.StatusUnprocessableEntity, map[string]string{
 			"title": "You already have a question with this title.",
 		})
 	}
@@ -545,11 +545,11 @@ func (config *Config) removeParticipants(c echo.Context) error {
 		if err != nil {
 			return validationError(c, map[string]string{"emails": fmt.Sprintf("invalid email address: %s", email)})
 		}
-		emailExists, _ := config.db.CheckEmailUniqueness(c.Request().Context(), email)
-
-		if !emailExists {
-			return validationError(c, map[string]string{"emails": fmt.Sprintf("User with this email : %s does not exist", email)})
-		}
+		//emailExists, _ := config.db.CheckEmailUniqueness(c.Request().Context(), email)
+		//
+		//if !emailExists {
+		//	return validationError(c, map[string]string{"emails": fmt.Sprintf("User with this email : %s does not exist", email)})
+		//}
 	}
 
 	//myUd, _ := uuid.Parse("2b2258ab-f848-405b-a95c-0901e682d9e7")
@@ -559,7 +559,7 @@ func (config *Config) removeParticipants(c echo.Context) error {
 
 	err = config.db.DeleteParticipants(c.Request().Context(), schema.DeleteParticipantsParams{
 		ExamID: examId,
-		Emails: []string{"client2@gmail.com"},
+		Emails: emails.Emails,
 	})
 
 	if err != nil {

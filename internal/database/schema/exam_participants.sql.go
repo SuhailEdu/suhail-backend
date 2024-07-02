@@ -32,7 +32,7 @@ func (q *Queries) CreateExamParticipant(ctx context.Context, arg CreateExamParti
 const deleteParticipants = `-- name: DeleteParticipants :exec
 DELETE
 FROM exam_participants
-WHERE user_id = ANY (SELECT id FROM users WHERE users.email = ANY ($2))
+WHERE email = ANY ($2)
   AND exam_id = $1
 `
 

@@ -6,7 +6,7 @@ ON CONFLICT (email , exam_id) DO NOTHING;
 -- name: DeleteParticipants :exec
 DELETE
 FROM exam_participants
-WHERE user_id = ANY (SELECT id FROM users WHERE users.email = ANY (sqlc.slice(emails)))
+WHERE email = ANY (sqlc.slice(emails))
   AND exam_id = $1
 ;
 
