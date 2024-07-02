@@ -8,7 +8,7 @@ import (
 )
 
 type UserResource struct {
-	ID              uuid.UUID    `json:"-"`
+	ID              uuid.UUID    `json:"id"`
 	FirstName       string       `json:"first_name"`
 	LastName        string       `json:"last_name"`
 	Email           string       `json:"email"`
@@ -22,7 +22,7 @@ type UserResource struct {
 func SerializeUserResource(user schema.User, token string) UserResource {
 
 	return UserResource{
-		//ID:        user.ID,
+		ID:        user.ID,
 		FirstName: user.FirstName,
 		LastName:  user.LastName,
 		Email:     user.Email,

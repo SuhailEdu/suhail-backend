@@ -69,7 +69,6 @@ func (config *Config) loginUser(c echo.Context) error {
 		return serverError(c, err)
 	}
 
-	fmt.Println("And here")
 	return c.JSON(http.StatusOK, types.SerializeUserResource(user, authToken))
 }
 
@@ -95,10 +94,10 @@ func (config *Config) registerUser(c echo.Context) error {
 
 	if len(e) > 0 {
 
-		err := map[string]interface{}{"validationError": e}
+		//err := map[string]interface{}{"validationError": e}
 		// Validate the User struct
 		// Validation failed, handle the error
-		return validationError(c, err)
+		return validationError(c, e)
 	}
 
 	if checkEmailIsUnique(c, *config, userInput.Email) {
