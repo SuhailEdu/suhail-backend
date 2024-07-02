@@ -32,6 +32,7 @@ type UpdateExamInput struct {
 
 type UpdateQuestionInput struct {
 	Title   string           `json:"title"`
+	Type    string           `json:"type"`
 	Options []OptionResource `json:"options"`
 }
 

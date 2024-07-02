@@ -258,6 +258,7 @@ func (config *Config) updateQuestion(c echo.Context) error {
 
 	rules := govalidator.MapData{
 		"title":   []string{"required"},
+		"type":    []string{"required"},
 		"options": []string{"required"},
 	}
 
@@ -284,6 +285,7 @@ func (config *Config) updateQuestion(c echo.Context) error {
 
 	question := types.QuestionInput{
 		Title:   questionSchema.Title,
+		Type:    questionSchema.Type,
 		Options: options,
 	}
 
