@@ -55,6 +55,15 @@ type QuestionResource struct {
 	UpdatedAt time.Time        `json:"updated_at"`
 	Options   []OptionResource `json:"options"`
 }
+type LiveQuestionResource struct {
+	Id        uuid.UUID `json:"id"`
+	ExamId    uuid.UUID `json:"exam_id"`
+	Title     string    `json:"title"`
+	Type      string    `json:"type"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Options   []string  `json:"options"`
+}
 
 type ExamResourceWithQuestions struct {
 	Id        uuid.UUID          `json:"id"`
@@ -327,6 +336,33 @@ func SerializeGetExamQuestions(questions []schema.ExamQuestion) []QuestionResour
 			CreatedAt: question.CreatedAt.Time,
 			UpdatedAt: question.UpdatedAt.Time,
 			Options:   answers,
+		})
+	}
+
+	return questionResource
+
+}
+
+func SerializeGetLiveExamQuestions(questions []schema.ExamQuestion) interface{} {
+
+	var questionResource []LiveQuestionResource
+
+	for _, question := range questions {
+		var answers []OptionResource
+		_ = json.Unmarshal(question.Answers, &answers)
+		var fixedAnswers []string
+
+		for _, answer := range answers {
+			fixedAnswers = append(fixedAnswers, answer.Option)
+		}
+		questionResource = append(questionResource, LiveQuestionResource{
+			Id:        question.ID,
+			ExamId:    question.ExamID,
+			Title:     question.Question,
+			Type:      question.Type,
+			CreatedAt: question.CreatedAt.Time,
+			UpdatedAt: question.UpdatedAt.Time,
+			Options:   fixedAnswers,
 		})
 	}
 
