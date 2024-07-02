@@ -38,3 +38,10 @@ FROM exam_questions
 WHERE exam_questions.id = $1
   AND EXISTS(SELECT 1 FROM exams WHERE exams.user_id = $2 AND exams.id = $3)
 ;
+
+-- name: GetExamQuestions :many
+SELECT *
+FROM exam_questions
+WHERE exam_id = $1
+LIMIT 1
+;

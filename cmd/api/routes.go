@@ -32,6 +32,7 @@ func registerApiRoutes(e *echo.Echo, config *Config) {
 	homeGroup.POST("/exams/:id/invite", config.inviteUsersToExam)
 	homeGroup.POST("/exams/:id/remove-participants", config.removeParticipants)
 
+	homeGroup.GET("/exams/:id/questions", config.getExamQuestions)
 	homeGroup.POST("/exams/:id/questions", config.addQuestionsToExam)
 	homeGroup.PATCH("/exams/:id/questions/:questionId", config.updateQuestion)
 	homeGroup.DELETE("/exams/:id/questions/:questionId", config.deleteQuestion)

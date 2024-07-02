@@ -351,7 +351,7 @@ func (config *Config) addQuestionsToExam(c echo.Context) error {
 	}
 
 	if alreadyExists {
-		return c.JSON(http.StatusUnprocessableEntity, map[string]string{
+		return validationError(c, map[string]string{
 			"title": "You already have a question with this title.",
 		})
 	}
@@ -494,8 +494,21 @@ func (config *Config) inviteUsersToExam(c echo.Context) error {
 
 }
 
+func (config *Config) getExamQuestions(c echo.Context) error {
+	examId, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return badRequestError(c, err)
+	}
+
+	questions, err := config.db.GetExamQuestions(c.Request().Context(), examId)
+	if err != nil {
+		return serverError(c, err)
+	}
+
+	return dataResponse(c, types.SerializeGetExamQuestions(questions))
+}
+
 func (config *Config) getExamParticipants(c echo.Context) error {
-	fmt.Println("psdfj")
 	examId, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		return badRequestError(c, err)

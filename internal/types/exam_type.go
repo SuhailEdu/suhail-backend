@@ -46,11 +46,13 @@ type OptionResource struct {
 }
 
 type QuestionResource struct {
-	Id      uuid.UUID        `json:"id"`
-	ExamId  uuid.UUID        `json:"exam_id"`
-	Title   string           `json:"title"`
-	Type    string           `json:"type"`
-	Options []OptionResource `json:"options"`
+	Id        uuid.UUID        `json:"id"`
+	ExamId    uuid.UUID        `json:"exam_id"`
+	Title     string           `json:"title"`
+	Type      string           `json:"type"`
+	CreatedAt time.Time        `json:"created_at"`
+	UpdatedAt time.Time        `json:"updated_at"`
+	Options   []OptionResource `json:"options"`
 }
 
 type ExamResourceWithQuestions struct {
@@ -308,6 +310,26 @@ func SerializeSingleParicipatedExam(exam []schema.FindMyParticipatedExamRow) Exa
 		UpdatedAt: exam[0].Exam.UpdatedAt.Time,
 		Questions: qs,
 	}
+
+}
+
+func SerializeGetExamQuestions(questions []schema.ExamQuestion) []QuestionResource {
+	var questionResource []QuestionResource
+	for _, question := range questions {
+		var answers []OptionResource
+		_ = json.Unmarshal(question.Answers, &answers)
+		questionResource = append(questionResource, QuestionResource{
+			Id:        question.ID,
+			ExamId:    question.ExamID,
+			Title:     question.Question,
+			Type:      question.Type,
+			CreatedAt: question.CreatedAt.Time,
+			UpdatedAt: question.UpdatedAt.Time,
+			Options:   answers,
+		})
+	}
+
+	return questionResource
 
 }
 func SerializeGetExamParticipants(participants []schema.GetExamParticipantsRow) []ExamParticipant {
