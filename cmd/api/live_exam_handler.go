@@ -31,12 +31,12 @@ func (config *Config) getLiveExamParticipantsForManager(c echo.Context) error {
 		return unAuthorizedError(c, errors.New("unauthorized access"))
 	}
 
-	participants, err := config.db.GetExamParticipants(c.Request().Context(), examId)
+	participants, err := config.db.GetLiveExamParticipants(c.Request().Context(), examId)
 	if err != nil {
 		return serverError(c, err)
 	}
 
-	return dataResponse(c, types.SerializeGetExamParticipants(participants))
+	return dataResponse(c, types.SerializeGetLiveExamParticipants(participants))
 }
 
 func (config *Config) getLiveExamQuestionsForManager(c echo.Context) error {
@@ -45,10 +45,10 @@ func (config *Config) getLiveExamQuestionsForManager(c echo.Context) error {
 		return badRequestError(c, err)
 	}
 
-	questions, err := config.db.GetExamQuestions(c.Request().Context(), examId)
+	questions, err := config.db.GetLiveExamQuestionForManager(c.Request().Context(), examId)
 	if err != nil {
 		return serverError(c, err)
 	}
 
-	return dataResponse(c, types.SerializeGetExamQuestions(questions))
+	return dataResponse(c, types.SerializeGetLiveExamQuestionsForManager(questions))
 }

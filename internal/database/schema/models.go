@@ -18,15 +18,17 @@ type Exam struct {
 	IsAccessable     pgtype.Bool
 	CreatedAt        pgtype.Timestamp
 	UpdatedAt        pgtype.Timestamp
+	LiveStatus       pgtype.Text
 }
 
 type ExamParticipant struct {
-	UserID    pgtype.UUID
-	ExamID    uuid.UUID
-	Email     string
-	Status    string
-	CreatedAt pgtype.Timestamp
-	UpdatedAt pgtype.Timestamp
+	UserID           pgtype.UUID
+	ExamID           uuid.UUID
+	Email            string
+	Status           string
+	CreatedAt        pgtype.Timestamp
+	UpdatedAt        pgtype.Timestamp
+	AttendanceStatus pgtype.Text
 }
 
 type ExamQuestion struct {

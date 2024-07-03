@@ -31,7 +31,7 @@ func (q *Queries) CheckExamTitleExists(ctx context.Context, arg CheckExamTitleEx
 const createExam = `-- name: CreateExam :one
 INSERT INTO exams(id, user_id, title, slug, visibility_status, is_accessable, created_at, updated_at)
 VALUES (uuid_generate_v4(), $1, $2, $3, $4, $5, current_timestamp, current_timestamp)
-RETURNING id, user_id, title, slug, visibility_status, is_accessable, created_at, updated_at
+RETURNING id, user_id, title, slug, visibility_status, is_accessable, created_at, updated_at, live_status
 `
 
 type CreateExamParams struct {
@@ -60,6 +60,7 @@ func (q *Queries) CreateExam(ctx context.Context, arg CreateExamParams) (Exam, e
 		&i.IsAccessable,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.LiveStatus,
 	)
 	return i, err
 }
@@ -76,7 +77,7 @@ func (q *Queries) DeleteExam(ctx context.Context, id uuid.UUID) error {
 }
 
 const findMyExam = `-- name: FindMyExam :many
-SELECT exams.id, exams.user_id, exams.title, exams.slug, exams.visibility_status, exams.is_accessable, exams.created_at, exams.updated_at, exam_questions.id, exam_questions.exam_id, exam_questions.question, exam_questions.answers, exam_questions.type, exam_questions.created_at, exam_questions.updated_at
+SELECT exams.id, exams.user_id, exams.title, exams.slug, exams.visibility_status, exams.is_accessable, exams.created_at, exams.updated_at, exams.live_status, exam_questions.id, exam_questions.exam_id, exam_questions.question, exam_questions.answers, exam_questions.type, exam_questions.created_at, exam_questions.updated_at
 FROM exams
          LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
 WHERE exams.id = $1
@@ -111,6 +112,7 @@ func (q *Queries) FindMyExam(ctx context.Context, arg FindMyExamParams) ([]FindM
 			&i.Exam.IsAccessable,
 			&i.Exam.CreatedAt,
 			&i.Exam.UpdatedAt,
+			&i.Exam.LiveStatus,
 			&i.ExamQuestion.ID,
 			&i.ExamQuestion.ExamID,
 			&i.ExamQuestion.Question,
@@ -130,7 +132,7 @@ func (q *Queries) FindMyExam(ctx context.Context, arg FindMyExamParams) ([]FindM
 }
 
 const findMyParticipatedExam = `-- name: FindMyParticipatedExam :many
-SELECT exams.id, exams.user_id, exams.title, exams.slug, exams.visibility_status, exams.is_accessable, exams.created_at, exams.updated_at, exam_questions.id, exam_questions.exam_id, exam_questions.question, exam_questions.answers, exam_questions.type, exam_questions.created_at, exam_questions.updated_at
+SELECT exams.id, exams.user_id, exams.title, exams.slug, exams.visibility_status, exams.is_accessable, exams.created_at, exams.updated_at, exams.live_status, exam_questions.id, exam_questions.exam_id, exam_questions.question, exam_questions.answers, exam_questions.type, exam_questions.created_at, exam_questions.updated_at
 FROM exams
          INNER JOIN exam_participants ON exam_participants.exam_id = exams.id
          LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
@@ -166,6 +168,7 @@ func (q *Queries) FindMyParticipatedExam(ctx context.Context, arg FindMyParticip
 			&i.Exam.IsAccessable,
 			&i.Exam.CreatedAt,
 			&i.Exam.UpdatedAt,
+			&i.Exam.LiveStatus,
 			&i.ExamQuestion.ID,
 			&i.ExamQuestion.ExamID,
 			&i.ExamQuestion.Question,
@@ -185,7 +188,7 @@ func (q *Queries) FindMyParticipatedExam(ctx context.Context, arg FindMyParticip
 }
 
 const getExamById = `-- name: GetExamById :one
-SELECT id, user_id, title, slug, visibility_status, is_accessable, created_at, updated_at
+SELECT id, user_id, title, slug, visibility_status, is_accessable, created_at, updated_at, live_status
 FROM exams
 WHERE id = $1
 `
@@ -202,46 +205,13 @@ func (q *Queries) GetExamById(ctx context.Context, id uuid.UUID) (Exam, error) {
 		&i.IsAccessable,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.LiveStatus,
 	)
 	return i, err
 }
 
-const getExamQuestions = `-- name: GetExamQuestions :many
-SELECT id, exam_id, question, answers, type, created_at, updated_at
-FROM exam_questions
-WHERE exam_id = $1
-`
-
-func (q *Queries) GetExamQuestions(ctx context.Context, examID uuid.UUID) ([]ExamQuestion, error) {
-	rows, err := q.db.Query(ctx, getExamQuestions, examID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []ExamQuestion
-	for rows.Next() {
-		var i ExamQuestion
-		if err := rows.Scan(
-			&i.ID,
-			&i.ExamID,
-			&i.Question,
-			&i.Answers,
-			&i.Type,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getParticipatedExams = `-- name: GetParticipatedExams :many
-SELECT exams.id, exams.user_id, exams.title, exams.slug, exams.visibility_status, exams.is_accessable, exams.created_at, exams.updated_at, COUNT(exam_questions.*) as questions_count
+SELECT exams.id, exams.user_id, exams.title, exams.slug, exams.visibility_status, exams.is_accessable, exams.created_at, exams.updated_at, exams.live_status, COUNT(exam_questions.*) as questions_count
 FROM exams
          LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
          INNER JOIN exam_participants ON exam_participants.exam_id = exams.id AND exam_participants.user_id = $1
@@ -258,6 +228,7 @@ type GetParticipatedExamsRow struct {
 	IsAccessable     pgtype.Bool
 	CreatedAt        pgtype.Timestamp
 	UpdatedAt        pgtype.Timestamp
+	LiveStatus       pgtype.Text
 	QuestionsCount   int64
 }
 
@@ -280,6 +251,7 @@ func (q *Queries) GetParticipatedExams(ctx context.Context, userID pgtype.UUID) 
 			&i.IsAccessable,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.LiveStatus,
 			&i.QuestionsCount,
 		); err != nil {
 			return nil, err
@@ -293,7 +265,7 @@ func (q *Queries) GetParticipatedExams(ctx context.Context, userID pgtype.UUID) 
 }
 
 const getUserExams = `-- name: GetUserExams :many
-SELECT exams.id, exams.user_id, exams.title, exams.slug, exams.visibility_status, exams.is_accessable, exams.created_at, exams.updated_at, COUNT(exam_participants.*) as particpants_count, COUNT(exam_questions.*) as questions_count
+SELECT exams.id, exams.user_id, exams.title, exams.slug, exams.visibility_status, exams.is_accessable, exams.created_at, exams.updated_at, exams.live_status, COUNT(exam_participants.*) as particpants_count, COUNT(exam_questions.*) as questions_count
 FROM exams
          LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
          LEFT JOIN exam_participants ON exam_participants.exam_id = exams.id
@@ -311,6 +283,7 @@ type GetUserExamsRow struct {
 	IsAccessable     pgtype.Bool
 	CreatedAt        pgtype.Timestamp
 	UpdatedAt        pgtype.Timestamp
+	LiveStatus       pgtype.Text
 	ParticpantsCount int64
 	QuestionsCount   int64
 }
@@ -333,6 +306,7 @@ func (q *Queries) GetUserExams(ctx context.Context, userID uuid.UUID) ([]GetUser
 			&i.IsAccessable,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.LiveStatus,
 			&i.ParticpantsCount,
 			&i.QuestionsCount,
 		); err != nil {
@@ -347,7 +321,7 @@ func (q *Queries) GetUserExams(ctx context.Context, userID uuid.UUID) ([]GetUser
 }
 
 const getUserExamsWithQuestions = `-- name: GetUserExamsWithQuestions :many
-SELECT exams.id, user_id, title, slug, visibility_status, is_accessable, exams.created_at, exams.updated_at, exam_questions.id, exam_id, question, answers, type, exam_questions.created_at, exam_questions.updated_at
+SELECT exams.id, user_id, title, slug, visibility_status, is_accessable, exams.created_at, exams.updated_at, live_status, exam_questions.id, exam_id, question, answers, type, exam_questions.created_at, exam_questions.updated_at
 FROM exams
          LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
 WHERE user_id = $1
@@ -362,6 +336,7 @@ type GetUserExamsWithQuestionsRow struct {
 	IsAccessable     pgtype.Bool
 	CreatedAt        pgtype.Timestamp
 	UpdatedAt        pgtype.Timestamp
+	LiveStatus       pgtype.Text
 	ID_2             pgtype.UUID
 	ExamID           pgtype.UUID
 	Question         pgtype.Text
@@ -389,6 +364,7 @@ func (q *Queries) GetUserExamsWithQuestions(ctx context.Context, userID uuid.UUI
 			&i.IsAccessable,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.LiveStatus,
 			&i.ID_2,
 			&i.ExamID,
 			&i.Question,
@@ -413,7 +389,7 @@ SET title             = $1,
     visibility_status = $2
 WHERE id = $3
 
-RETURNING id, user_id, title, slug, visibility_status, is_accessable, created_at, updated_at
+RETURNING id, user_id, title, slug, visibility_status, is_accessable, created_at, updated_at, live_status
 `
 
 type UpdateExamParams struct {

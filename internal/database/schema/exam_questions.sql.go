@@ -86,6 +86,41 @@ func (q *Queries) DeleteQuestion(ctx context.Context, arg DeleteQuestionParams) 
 	return err
 }
 
+const getExamQuestions = `-- name: GetExamQuestions :many
+SELECT id, exam_id, question, answers, type, created_at, updated_at
+FROM exam_questions
+WHERE exam_id = $1
+LIMIT 1
+`
+
+func (q *Queries) GetExamQuestions(ctx context.Context, examID uuid.UUID) ([]ExamQuestion, error) {
+	rows, err := q.db.Query(ctx, getExamQuestions, examID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ExamQuestion
+	for rows.Next() {
+		var i ExamQuestion
+		if err := rows.Scan(
+			&i.ID,
+			&i.ExamID,
+			&i.Question,
+			&i.Answers,
+			&i.Type,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getQuestionById = `-- name: GetQuestionById :one
 SELECT id, exam_id, question, answers, type, created_at, updated_at
 FROM exam_questions

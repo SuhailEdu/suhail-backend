@@ -45,11 +45,6 @@ FROM exams
          LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
 WHERE user_id = $1;
 
--- name: GetExamQuestions :many
-SELECT *
-FROM exam_questions
-WHERE exam_id = $1;
-
 -- name: CheckExamTitleExists :one
 SELECT EXISTS(SELECT 1 FROM exams WHERE title = $1 AND user_id = $2);
 

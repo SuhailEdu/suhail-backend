@@ -343,32 +343,6 @@ func SerializeGetExamQuestions(questions []schema.ExamQuestion) []QuestionResour
 
 }
 
-func SerializeGetLiveExamQuestions(questions []schema.ExamQuestion) interface{} {
-
-	var questionResource []LiveQuestionResource
-
-	for _, question := range questions {
-		var answers []OptionResource
-		_ = json.Unmarshal(question.Answers, &answers)
-		var fixedAnswers []string
-
-		for _, answer := range answers {
-			fixedAnswers = append(fixedAnswers, answer.Option)
-		}
-		questionResource = append(questionResource, LiveQuestionResource{
-			Id:        question.ID,
-			ExamId:    question.ExamID,
-			Title:     question.Question,
-			Type:      question.Type,
-			CreatedAt: question.CreatedAt.Time,
-			UpdatedAt: question.UpdatedAt.Time,
-			Options:   fixedAnswers,
-		})
-	}
-
-	return questionResource
-
-}
 func SerializeGetExamParticipants(participants []schema.GetExamParticipantsRow) []ExamParticipant {
 
 	ps := make([]ExamParticipant, len(participants))
