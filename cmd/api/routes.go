@@ -29,6 +29,9 @@ func registerApiRoutes(e *echo.Echo, config *Config) {
 	homeGroup.DELETE("/exams/:id", config.updateExam)
 	homeGroup.GET("/exams/:id/live", config.getLiveExamQuestion)
 
+	homeGroup.GET("/exams/:id/live/manage/participants", config.getLiveExamParticipantsForManager)
+	homeGroup.GET("/exams/:id/live/manage/questions", config.getLiveExamQuestionsForManager)
+
 	homeGroup.GET("/exams/:id/participants", config.getExamParticipants)
 	homeGroup.POST("/exams/:id/invite", config.inviteUsersToExam)
 	homeGroup.POST("/exams/:id/remove-participants", config.removeParticipants)
