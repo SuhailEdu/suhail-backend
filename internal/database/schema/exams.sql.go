@@ -77,12 +77,13 @@ func (q *Queries) DeleteExam(ctx context.Context, id uuid.UUID) error {
 }
 
 const findMyExam = `-- name: FindMyExam :one
-SELECT exams.id, exams.user_id, exams.title, exams.slug, exams.visibility_status, exams.is_accessable, exams.created_at, exams.updated_at, exams.live_status, COUNT(exam_questions.*) as questions_count, COUNT(exam_paticipants.*) as participants_count
+SELECT exams.id, exams.user_id, exams.title, exams.slug, exams.visibility_status, exams.is_accessable, exams.created_at, exams.updated_at, exams.live_status, COUNT(exam_questions.*) as questions_count, COUNT(exam_participants.*) as participants_count
 FROM exams
          LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
          LEFT JOIN exam_participants ON exam_participants.exam_id = exams.id
 WHERE exams.id = $1
   AND exams.user_id = $2
+GROUP BY exams.id
 `
 
 type FindMyExamParams struct {

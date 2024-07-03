@@ -55,6 +55,8 @@ func (config *Config) getSingleExam(c echo.Context) error {
 
 	exam, err := config.db.FindMyExam(c.Request().Context(), schema.FindMyExamParams{ID: examId, UserID: userId})
 
+	fmt.Println(err)
+
 	if err != nil {
 
 		participatedExam, pErr := config.db.FindMyParticipatedExam(c.Request().Context(), schema.FindMyParticipatedExamParams{

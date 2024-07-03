@@ -87,6 +87,18 @@ type ExamResource struct {
 	ParticipantsCount int64     `json:"participants_count"`
 	IsMyExam          bool      `json:"is_my_exam"`
 }
+
+type ExamListResource struct {
+	Id                uuid.UUID `json:"id"`
+	UserId            uuid.UUID `json:"user_id"`
+	ExamTitle         string    `json:"exam_title"`
+	Status            string    `json:"status"`
+	LiveStatus        string    `json:"live_status"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
+	QuestionsCount    int64     `json:"questions_count"`
+	ParticipantsCount int64     `json:"participants_count"`
+}
 type ExamParticipant struct {
 	ID        uuid.UUID `json:"id"`
 	Email     string    `json:"email"`
@@ -163,18 +175,18 @@ func examSchemaToExamResource(exam schema.Exam, questions []schema.ExamQuestion)
 
 }
 
-func SerializeExams(exams []schema.GetUserExamsRow) []ExamResource {
+func SerializeExams(exams []schema.GetUserExamsRow) []ExamListResource {
 
 	if len(exams) == 0 {
 
-		return []ExamResource{}
+		return []ExamListResource{}
 
 	}
 
-	var examResource []ExamResource
+	var examResource []ExamListResource
 
 	for _, exam := range exams {
-		examResource = append(examResource, ExamResource{
+		examResource = append(examResource, ExamListResource{
 			Id:                exam.ID,
 			UserId:            exam.UserID,
 			ExamTitle:         exam.Title,
