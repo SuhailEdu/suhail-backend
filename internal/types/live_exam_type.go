@@ -7,6 +7,26 @@ import (
 	"time"
 )
 
+type LiveExamResource struct {
+	Id         uuid.UUID `json:"id"`
+	ExamTitle  string    `json:"exam_title"`
+	UserId     uuid.UUID `json:"user_id"`
+	Status     string    `json:"status"`
+	LiveStatus string    `json:"live_status"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+}
+
+type LiveQuestionResource struct {
+	Id        uuid.UUID `json:"id"`
+	ExamId    uuid.UUID `json:"exam_id"`
+	Title     string    `json:"title"`
+	Type      string    `json:"type"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Options   []string  `json:"options"`
+}
+
 type LiveExamForManager struct {
 	Id         uuid.UUID `json:"id"`
 	ExamTitle  string    `json:"exam_title"`
@@ -85,5 +105,41 @@ func SerializeGetLiveExamParticipants(participants []schema.GetLiveExamParticipa
 	}
 
 	return ps
+
+}
+func SerializeGetLiveExam(exam schema.Exam, questions []schema.ExamQuestion) interface{} {
+
+	var fixedQuestion []LiveQuestionResource
+
+	for _, question := range questions {
+		var answers []OptionResource
+		_ = json.Unmarshal(question.Answers, &answers)
+		var fixedAnswers []string
+		for _, answer := range answers {
+			fixedAnswers = append(fixedAnswers, answer.Option)
+		}
+		fixedQuestion = append(fixedQuestion, LiveQuestionResource{
+			Id:        question.ID,
+			ExamId:    question.ExamID,
+			Type:      question.Type,
+			Options:   fixedAnswers,
+			CreatedAt: question.CreatedAt.Time,
+			UpdatedAt: question.UpdatedAt.Time,
+		})
+
+	}
+
+	return map[string]interface{}{
+		"questions": fixedQuestion,
+		"exam": LiveExamResource{
+			Id:         exam.ID,
+			ExamTitle:  exam.Title,
+			UserId:     exam.UserID,
+			Status:     exam.VisibilityStatus,
+			CreatedAt:  exam.CreatedAt.Time,
+			UpdatedAt:  exam.UpdatedAt.Time,
+			LiveStatus: exam.LiveStatus.String,
+		},
+	}
 
 }

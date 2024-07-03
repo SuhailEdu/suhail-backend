@@ -509,20 +509,6 @@ func (config *Config) getExamQuestions(c echo.Context) error {
 	return dataResponse(c, types.SerializeGetExamQuestions(questions))
 }
 
-func (config *Config) getLiveExamQuestion(c echo.Context) error {
-	examId, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		return badRequestError(c, err)
-	}
-
-	questions, err := config.db.GetExamQuestions(c.Request().Context(), examId)
-	if err != nil {
-		return serverError(c, err)
-	}
-	return dataResponse(c, types.SerializeGetExamQuestions(questions))
-
-}
-
 func (config *Config) getExamParticipants(c echo.Context) error {
 	examId, err := uuid.Parse(c.Param("id"))
 	if err != nil {

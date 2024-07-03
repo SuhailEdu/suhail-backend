@@ -55,15 +55,6 @@ type QuestionResource struct {
 	UpdatedAt time.Time        `json:"updated_at"`
 	Options   []OptionResource `json:"options"`
 }
-type LiveQuestionResource struct {
-	Id        uuid.UUID `json:"id"`
-	ExamId    uuid.UUID `json:"exam_id"`
-	Title     string    `json:"title"`
-	Type      string    `json:"type"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Options   []string  `json:"options"`
-}
 
 type ExamResourceWithQuestions struct {
 	Id        uuid.UUID          `json:"id"`

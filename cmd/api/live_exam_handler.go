@@ -12,6 +12,37 @@ import (
 	"net/http"
 )
 
+func (config *Config) getLiveExam(c echo.Context) error {
+	examId, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return badRequestError(c, err)
+	}
+
+	authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
+	userId := authenticatedUser.ID
+
+	isParticipant, err := isExamParticipant(c, config, examId, userId)
+	if err != nil {
+		return serverError(c, err)
+	}
+	if !isParticipant {
+		return unAuthorizedError(c, "unauthorized user")
+	}
+
+	exam, err := config.db.GetExamById(c.Request().Context(), examId)
+
+	if err != nil {
+		return serverError(c, err)
+	}
+
+	questions, err := config.db.GetExamQuestions(c.Request().Context(), examId)
+	if err != nil {
+		return serverError(c, err)
+	}
+	return dataResponse(c, types.SerializeGetLiveExam(exam, questions))
+
+}
+
 func (config *Config) getLiveExamParticipantsForManager(c echo.Context) error {
 
 	examId, err := uuid.Parse(c.Param("id"))
