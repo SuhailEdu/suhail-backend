@@ -32,6 +32,8 @@ func registerApiRoutes(e *echo.Echo, config *Config) {
 	homeGroup.GET("/exams/:id/live/manage/participants", config.getLiveExamParticipantsForManager)
 	homeGroup.GET("/exams/:id/live/manage/questions", config.getLiveExamQuestionsForManager)
 
+	homeGroup.POST("/exams/:id/live/manage/update-status", config.updateExamStatus)
+
 	homeGroup.GET("/exams/:id/participants", config.getExamParticipants)
 	homeGroup.POST("/exams/:id/invite", config.inviteUsersToExam)
 	homeGroup.POST("/exams/:id/remove-participants", config.removeParticipants)

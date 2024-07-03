@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const getLiveExamParticipants = `-- name: GetLiveExamParticipants :many
@@ -106,4 +107,20 @@ func (q *Queries) GetLiveExamQuestionForManager(ctx context.Context, id uuid.UUI
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateExamLiveStatus = `-- name: UpdateExamLiveStatus :exec
+UPDATE exams
+SET live_status = $1
+WHERE id = $2
+`
+
+type UpdateExamLiveStatusParams struct {
+	LiveStatus pgtype.Text
+	ID         uuid.UUID
+}
+
+func (q *Queries) UpdateExamLiveStatus(ctx context.Context, arg UpdateExamLiveStatusParams) error {
+	_, err := q.db.Exec(ctx, updateExamLiveStatus, arg.LiveStatus, arg.ID)
+	return err
 }

@@ -6,23 +6,17 @@ import (
 	"github.com/SuhailEdu/suhail-backend/internal/types"
 	_ "github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v4"
 	_ "golang.org/x/crypto/bcrypt"
+	"net/http"
 )
 
 func (config *Config) getLiveExamParticipantsForManager(c echo.Context) error {
 
-	authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
-	userId := authenticatedUser.ID
-
 	examId, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		return badRequestError(c, err)
-	}
-
-	_, err = config.db.GetUserExams(c.Request().Context(), userId)
-	if err != nil {
-		return serverError(c, err)
 	}
 
 	isAuther, _ := isExamAuthor(c, config, examId)
@@ -51,4 +45,34 @@ func (config *Config) getLiveExamQuestionsForManager(c echo.Context) error {
 	}
 
 	return dataResponse(c, types.SerializeGetLiveExamQuestionsForManager(questions))
+}
+
+func (config *Config) updateExamStatus(c echo.Context) error {
+
+	examId, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return badRequestError(c, err)
+	}
+
+	status := c.FormValue("status")
+
+	if status != "paused" && status != "finished" && status != "live" {
+		return badRequestError(c, errors.New("invalid status"))
+	}
+
+	isAuther, _ := isExamAuthor(c, config, examId)
+	if !isAuther {
+		return unAuthorizedError(c, errors.New("unauthorized access"))
+	}
+
+	err = config.db.UpdateExamLiveStatus(c.Request().Context(), schema.UpdateExamLiveStatusParams{
+		LiveStatus: pgtype.Text{String: status, Valid: true},
+		ID:         examId,
+	})
+
+	if err != nil {
+		return serverError(c, err)
+	}
+
+	return c.NoContent(http.StatusOK)
 }

@@ -10,3 +10,8 @@ FROM exam_participants
          INNER JOIN users ON users.id = exam_participants.user_id
 WHERE exam_participants.exam_id = $1
 ;
+
+-- name: UpdateExamLiveStatus :exec
+UPDATE exams
+SET live_status = $1
+WHERE id = $2;
