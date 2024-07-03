@@ -80,10 +80,12 @@ type ExamResource struct {
 	UserId            uuid.UUID `json:"user_id"`
 	ExamTitle         string    `json:"exam_title"`
 	Status            string    `json:"status"`
+	LiveStatus        string    `json:"live_status"`
 	CreatedAt         time.Time `json:"created_at"`
 	UpdatedAt         time.Time `json:"updated_at"`
 	QuestionsCount    int64     `json:"questions_count"`
 	ParticipantsCount int64     `json:"participants_count"`
+	IsMyExam          bool      `json:"is_my_exam"`
 }
 type ExamParticipant struct {
 	ID        uuid.UUID `json:"id"`
@@ -267,30 +269,19 @@ func SerializeUpdateQuestion(question QuestionInput, questionId uuid.UUID, examI
 
 }
 
-func SerializeSingleExam(exam []schema.FindMyExamRow) ExamResourceWithQuestions {
+func SerializeSingleExam(exam schema.FindMyExamRow, isMyExam bool) ExamResource {
 
-	qs := make([]QuestionResource, len(exam))
-	for i, ex := range exam {
-		var answers []OptionResource
-		_ = json.Unmarshal(ex.ExamQuestion.Answers, &answers)
-
-		qs[i] = QuestionResource{
-			Id:      ex.ExamQuestion.ID,
-			ExamId:  ex.ExamQuestion.ExamID,
-			Title:   ex.ExamQuestion.Question,
-			Options: answers,
-			Type:    ex.ExamQuestion.Type,
-		}
-	}
-
-	return ExamResourceWithQuestions{
-		Id:        exam[0].Exam.ID,
-		UserId:    exam[0].Exam.UserID,
-		ExamTitle: exam[0].Exam.Title,
-		Status:    exam[0].Exam.VisibilityStatus,
-		CreatedAt: exam[0].Exam.CreatedAt.Time,
-		UpdatedAt: exam[0].Exam.UpdatedAt.Time,
-		Questions: qs,
+	return ExamResource{
+		Id:                exam.ID,
+		UserId:            exam.UserID,
+		ExamTitle:         exam.Title,
+		Status:            exam.VisibilityStatus,
+		LiveStatus:        exam.LiveStatus.String,
+		CreatedAt:         exam.CreatedAt.Time,
+		UpdatedAt:         exam.UpdatedAt.Time,
+		IsMyExam:          isMyExam,
+		QuestionsCount:    exam.QuestionsCount,
+		ParticipantsCount: exam.ParticipantsCount,
 	}
 
 }

@@ -76,10 +76,11 @@ func (q *Queries) DeleteExam(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
-const findMyExam = `-- name: FindMyExam :many
-SELECT exams.id, exams.user_id, exams.title, exams.slug, exams.visibility_status, exams.is_accessable, exams.created_at, exams.updated_at, exams.live_status, exam_questions.id, exam_questions.exam_id, exam_questions.question, exam_questions.answers, exam_questions.type, exam_questions.created_at, exam_questions.updated_at
+const findMyExam = `-- name: FindMyExam :one
+SELECT exams.id, exams.user_id, exams.title, exams.slug, exams.visibility_status, exams.is_accessable, exams.created_at, exams.updated_at, exams.live_status, COUNT(exam_questions.*) as questions_count, COUNT(exam_paticipants.*) as participants_count
 FROM exams
          LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
+         LEFT JOIN exam_participants ON exam_participants.exam_id = exams.id
 WHERE exams.id = $1
   AND exams.user_id = $2
 `
@@ -90,45 +91,36 @@ type FindMyExamParams struct {
 }
 
 type FindMyExamRow struct {
-	Exam         Exam
-	ExamQuestion ExamQuestion
+	ID                uuid.UUID
+	UserID            uuid.UUID
+	Title             string
+	Slug              pgtype.Text
+	VisibilityStatus  string
+	IsAccessable      pgtype.Bool
+	CreatedAt         pgtype.Timestamp
+	UpdatedAt         pgtype.Timestamp
+	LiveStatus        pgtype.Text
+	QuestionsCount    int64
+	ParticipantsCount int64
 }
 
-func (q *Queries) FindMyExam(ctx context.Context, arg FindMyExamParams) ([]FindMyExamRow, error) {
-	rows, err := q.db.Query(ctx, findMyExam, arg.ID, arg.UserID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []FindMyExamRow
-	for rows.Next() {
-		var i FindMyExamRow
-		if err := rows.Scan(
-			&i.Exam.ID,
-			&i.Exam.UserID,
-			&i.Exam.Title,
-			&i.Exam.Slug,
-			&i.Exam.VisibilityStatus,
-			&i.Exam.IsAccessable,
-			&i.Exam.CreatedAt,
-			&i.Exam.UpdatedAt,
-			&i.Exam.LiveStatus,
-			&i.ExamQuestion.ID,
-			&i.ExamQuestion.ExamID,
-			&i.ExamQuestion.Question,
-			&i.ExamQuestion.Answers,
-			&i.ExamQuestion.Type,
-			&i.ExamQuestion.CreatedAt,
-			&i.ExamQuestion.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) FindMyExam(ctx context.Context, arg FindMyExamParams) (FindMyExamRow, error) {
+	row := q.db.QueryRow(ctx, findMyExam, arg.ID, arg.UserID)
+	var i FindMyExamRow
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Title,
+		&i.Slug,
+		&i.VisibilityStatus,
+		&i.IsAccessable,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.LiveStatus,
+		&i.QuestionsCount,
+		&i.ParticipantsCount,
+	)
+	return i, err
 }
 
 const findMyParticipatedExam = `-- name: FindMyParticipatedExam :many

@@ -55,9 +55,8 @@ func (config *Config) getSingleExam(c echo.Context) error {
 
 	exam, err := config.db.FindMyExam(c.Request().Context(), schema.FindMyExamParams{ID: examId, UserID: userId})
 
-	if len(exam) == 0 {
-		fmt.Println("Exam not found")
-		//return c.JSON(http.StatusNotFound, map[string]string{})
+	if err != nil {
+
 		participatedExam, pErr := config.db.FindMyParticipatedExam(c.Request().Context(), schema.FindMyParticipatedExamParams{
 			UserID: pgtype.UUID{Bytes: userId, Valid: true},
 			ID:     examId,
@@ -66,13 +65,11 @@ func (config *Config) getSingleExam(c echo.Context) error {
 		if len(participatedExam) == 0 {
 			return c.JSON(http.StatusNotFound, map[string]string{})
 		}
-		//return c.JSON(http.StatusOK, participatedExam)
+
 		return dataResponse(c, types.SerializeSingleParicipatedExam(participatedExam))
 
 	}
-	//fmt.Println(exam, err)
-
-	return dataResponse(c, types.SerializeSingleExam(exam))
+	return dataResponse(c, types.SerializeSingleExam(exam, true))
 
 }
 func (config *Config) createExam(c echo.Context) error {

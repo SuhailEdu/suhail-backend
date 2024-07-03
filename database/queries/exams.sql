@@ -49,10 +49,11 @@ WHERE user_id = $1;
 SELECT EXISTS(SELECT 1 FROM exams WHERE title = $1 AND user_id = $2);
 
 
--- name: FindMyExam :many
-SELECT sqlc.embed(exams), sqlc.embed(exam_questions)
+-- name: FindMyExam :one
+SELECT exams.*, COUNT(exam_questions.*) as questions_count, COUNT(exam_paticipants.*) as participants_count
 FROM exams
          LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
+         LEFT JOIN exam_participants ON exam_participants.exam_id = exams.id
 WHERE exams.id = $1
   AND exams.user_id = $2
 ;
