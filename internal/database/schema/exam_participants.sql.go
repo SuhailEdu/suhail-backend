@@ -12,6 +12,22 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const checkParticipant = `-- name: CheckParticipant :one
+SELECT EXISTS(SELECT 1 FROM exam_participants WHERE exam_id = $1 AND user_id = $2)
+`
+
+type CheckParticipantParams struct {
+	ExamID uuid.UUID
+	UserID pgtype.UUID
+}
+
+func (q *Queries) CheckParticipant(ctx context.Context, arg CheckParticipantParams) (bool, error) {
+	row := q.db.QueryRow(ctx, checkParticipant, arg.ExamID, arg.UserID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const createExamParticipant = `-- name: CreateExamParticipant :exec
 INSERT INTO exam_participants (exam_id, email, status)
 VALUES ($1, $2, $3)

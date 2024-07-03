@@ -17,3 +17,7 @@ FROM exam_participants
 WHERE exam_id = $1
 ;
 
+
+-- name: CheckParticipant :one
+SELECT EXISTS(SELECT 1 FROM exam_participants WHERE exam_id = $1 AND user_id = $2);
+

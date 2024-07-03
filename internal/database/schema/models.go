@@ -41,6 +41,14 @@ type ExamQuestion struct {
 	UpdatedAt pgtype.Timestamp
 }
 
+type QuestionAnswer struct {
+	ID         uuid.UUID
+	UserID     uuid.UUID
+	QuestionID uuid.UUID
+	Answer     string
+	IsCorrect  pgtype.Bool
+}
+
 type Token struct {
 	Hash   []byte
 	UserID uuid.UUID

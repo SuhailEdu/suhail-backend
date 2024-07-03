@@ -31,6 +31,10 @@ LIMIT 1
 SELECT EXISTS(SELECT 1 FROM exam_questions WHERE question = $1 AND exam_id = $2);
 ;
 
+-- name: CheckQuestionExits :one
+SELECT EXISTS(SELECT 1 FROM exam_questions WHERE id = $1 AND exam_id = $2);
+;
+
 -- name: DeleteQuestion :exec
 DELETE
 FROM exam_questions

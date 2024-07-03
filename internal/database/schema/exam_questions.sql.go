@@ -11,6 +11,22 @@ import (
 	"github.com/google/uuid"
 )
 
+const checkQuestionExits = `-- name: CheckQuestionExits :one
+SELECT EXISTS(SELECT 1 FROM exam_questions WHERE id = $1 AND exam_id = $2)
+`
+
+type CheckQuestionExitsParams struct {
+	ID     uuid.UUID
+	ExamID uuid.UUID
+}
+
+func (q *Queries) CheckQuestionExits(ctx context.Context, arg CheckQuestionExitsParams) (bool, error) {
+	row := q.db.QueryRow(ctx, checkQuestionExits, arg.ID, arg.ExamID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const checkQuestionTitleExits = `-- name: CheckQuestionTitleExits :one
 SELECT EXISTS(SELECT 1 FROM exam_questions WHERE question = $1 AND exam_id = $2)
 `

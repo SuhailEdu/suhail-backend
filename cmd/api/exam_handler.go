@@ -520,7 +520,7 @@ func (config *Config) getLiveExamQuestion(c echo.Context) error {
 	if err != nil {
 		return serverError(c, err)
 	}
-	return dataResponse(c, types.SerializeGetLiveExamQuestions(questions))
+	return dataResponse(c, types.SerializeGetExamQuestions(questions))
 
 }
 

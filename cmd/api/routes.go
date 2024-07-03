@@ -33,6 +33,7 @@ func registerApiRoutes(e *echo.Echo, config *Config) {
 	homeGroup.GET("/exams/:id/live/manage/questions", config.getLiveExamQuestionsForManager)
 
 	homeGroup.POST("/exams/:id/live/manage/update-status", config.updateExamStatus)
+	homeGroup.POST("/exams/:id/live/store-answer", config.storeAnswer)
 
 	homeGroup.GET("/exams/:id/participants", config.getExamParticipants)
 	homeGroup.POST("/exams/:id/invite", config.inviteUsersToExam)

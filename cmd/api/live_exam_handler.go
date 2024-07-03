@@ -76,3 +76,73 @@ func (config *Config) updateExamStatus(c echo.Context) error {
 
 	return c.NoContent(http.StatusOK)
 }
+
+func (config *Config) storeAnswer(c echo.Context) error {
+
+	examId, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return badRequestError(c, err)
+	}
+
+	questionId := c.FormValue("questionId")
+	answer := c.FormValue("answer")
+
+	if questionId == "" {
+		return badRequestError(c, errors.New("invalid question id"))
+	}
+
+	if answer == "" {
+		return badRequestError(c, errors.New("invalid answer"))
+	}
+
+	authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
+	userId := authenticatedUser.ID
+
+	isParticipant, _ := isExamParticipant(c, config, examId, userId)
+	if !isParticipant {
+		return unAuthorizedError(c, errors.New("unauthorized access"))
+	}
+
+	questionUUID, err := uuid.FromBytes([]byte(questionId))
+	if err != nil {
+		return badRequestError(c, errors.New("invalid question id"))
+	}
+
+	isQuestionExits, err := config.db.CheckQuestionExits(c.Request().Context(), schema.CheckQuestionExitsParams{
+		ID:     questionUUID,
+		ExamID: examId,
+	})
+
+	if !isQuestionExits {
+		return badRequestError(c, errors.New("invalid question id"))
+	}
+
+	err = config.db.UpdateAnswer(c.Request().Context(), schema.UpdateAnswerParams{
+		QuestionID: questionUUID,
+		UserID:     authenticatedUser.ID,
+		Answer:     answer,
+	})
+
+	if err != nil {
+		return serverError(c, err)
+	}
+
+	return c.NoContent(http.StatusOK)
+}
+func isExamParticipant(c echo.Context, config *Config, examId uuid.UUID, participantId uuid.UUID) (bool, error) {
+
+	uuidValue := pgtype.UUID{
+		Bytes: participantId,
+	}
+	isParticipant, err := config.db.CheckParticipant(c.Request().Context(), schema.CheckParticipantParams{
+		ExamID: examId,
+		UserID: uuidValue,
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	return isParticipant, nil
+
+}
