@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"github.com/SuhailEdu/suhail-backend/internal/database/schema"
 	"github.com/SuhailEdu/suhail-backend/internal/types"
 	_ "github.com/go-playground/validator/v10"
@@ -121,14 +122,20 @@ func (config *Config) storeAnswer(c echo.Context) error {
 		return badRequestError(c, err)
 	}
 
-	questionId := c.FormValue("questionId")
-	answer := c.FormValue("answer")
+	var body struct {
+		QuestionId uuid.UUID `json:"question_id"`
+		Answer     string    `json:"answer"`
+	}
 
-	if questionId == "" {
+	if err := c.Bind(&body); err != nil {
+		return badRequestError(c, errors.New("invalid body"))
+	}
+
+	if _, err = body.QuestionId.Value(); err != nil {
 		return badRequestError(c, errors.New("invalid question id"))
 	}
 
-	if answer == "" {
+	if body.Answer == "" {
 		return badRequestError(c, errors.New("invalid answer"))
 	}
 
@@ -140,13 +147,17 @@ func (config *Config) storeAnswer(c echo.Context) error {
 		return unAuthorizedError(c, errors.New("unauthorized access"))
 	}
 
-	questionUUID, err := uuid.FromBytes([]byte(questionId))
-	if err != nil {
-		return badRequestError(c, errors.New("invalid question id"))
-	}
+	//questionUUID, err := uuid.FromBytes([]byte(body.QuestionId))
+	//if err != nil {
+	//	fmt.Println(err)
+	//	fmt.Println(body.QuestionId)
+	//	return badRequestError(c, errors.New("invalid question id"))
+	//}
+
+	fmt.Println(body.QuestionId)
 
 	isQuestionExits, err := config.db.CheckQuestionExits(c.Request().Context(), schema.CheckQuestionExitsParams{
-		ID:     questionUUID,
+		ID:     body.QuestionId,
 		ExamID: examId,
 	})
 
@@ -155,9 +166,9 @@ func (config *Config) storeAnswer(c echo.Context) error {
 	}
 
 	err = config.db.UpdateAnswer(c.Request().Context(), schema.UpdateAnswerParams{
-		QuestionID: questionUUID,
+		QuestionID: body.QuestionId,
 		UserID:     authenticatedUser.ID,
-		Answer:     answer,
+		Answer:     body.Answer,
 	})
 
 	if err != nil {
@@ -176,8 +187,6 @@ func isExamParticipant(c echo.Context, config *Config, examId uuid.UUID, partici
 		ExamID: examId,
 		UserID: uuidValue,
 	})
-
-	//fmt.Println(isParticipant, uu)
 
 	if err != nil {
 		return false, err
