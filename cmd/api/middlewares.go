@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/sha256"
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"strings"
 	"time"
@@ -34,6 +35,36 @@ func (config *Config) checkAuthToken(next echo.HandlerFunc) echo.HandlerFunc {
 
 		c.Set("user", userToken)
 
+		return next(c)
+
+	}
+
+}
+func (config *Config) checkWsAuthToken(next echo.HandlerFunc) echo.HandlerFunc {
+
+	return func(c echo.Context) error {
+		fmt.Println("checking token")
+		authHeader := c.Request().Header.Get("Sec-WebSocket-Protocol")
+		if authHeader == "" {
+			return unAuthorizedError(c, "Invalid Authorization header")
+		}
+
+		hash := sha256.Sum256([]byte(authHeader))
+
+		userToken, err := config.db.GetUserByToken(c.Request().Context(), hash[:])
+
+		if err != nil {
+			return unAuthorizedError(c, "Invalid Authorization token")
+		}
+
+		if userToken.Expiry.Time.Before(time.Now()) {
+			return unAuthorizedError(c, "Expired Authorization token")
+		}
+
+		c.Set("user", userToken)
+
+		fmt.Println(authHeader)
+		fmt.Println("above header checked")
 		return next(c)
 
 	}

@@ -10,6 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/lib/pq"
+	"github.com/olahol/melody"
 	"log"
 	"os"
 )
@@ -17,6 +18,7 @@ import (
 type Config struct {
 	db     *schema.Queries
 	logger *log.Logger
+	melody *melody.Melody
 }
 
 func main() {
@@ -36,11 +38,15 @@ func main() {
 
 	queries := schema.New(conn)
 
-	config := &Config{
-		db: queries,
-	}
+	m := melody.New()
 
+	config := &Config{
+		db:     queries,
+		melody: m,
+	}
 	e := echo.New()
+
+	registerMelodyHandlers(e, config)
 
 	e.Use(middleware.CORS())
 

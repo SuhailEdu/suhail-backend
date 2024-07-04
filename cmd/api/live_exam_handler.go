@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/SuhailEdu/suhail-backend/internal/database/schema"
@@ -112,6 +113,21 @@ func (config *Config) updateExamStatus(c echo.Context) error {
 		return serverError(c, err)
 	}
 
+	statusEvent := map[string]interface{}{
+		"type": "LIVE_EXAM_STATUS_UPDATED",
+		"payload": map[string]interface{}{
+			"status": body.Status,
+		},
+	}
+
+	jsonEvent, _ := json.Marshal(statusEvent)
+
+	err = config.melody.Broadcast(jsonEvent)
+
+	if err != nil {
+		return err
+	}
+
 	return c.NoContent(http.StatusOK)
 }
 
@@ -173,6 +189,11 @@ func (config *Config) storeAnswer(c echo.Context) error {
 
 	if err != nil {
 		return serverError(c, err)
+	}
+
+	err = config.melody.Broadcast([]byte(fmt.Sprintf("New answer : %s", body.Answer)))
+	if err != nil {
+		return err
 	}
 
 	return c.NoContent(http.StatusOK)
