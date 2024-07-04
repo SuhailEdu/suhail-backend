@@ -170,11 +170,14 @@ func isExamParticipant(c echo.Context, config *Config, examId uuid.UUID, partici
 
 	uuidValue := pgtype.UUID{
 		Bytes: participantId,
+		Valid: true,
 	}
 	isParticipant, err := config.db.CheckParticipant(c.Request().Context(), schema.CheckParticipantParams{
 		ExamID: examId,
 		UserID: uuidValue,
 	})
+
+	//fmt.Println(isParticipant, uu)
 
 	if err != nil {
 		return false, err
