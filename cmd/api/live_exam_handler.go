@@ -117,10 +117,6 @@ func (config *Config) updateExamStatus(c echo.Context) error {
 
 	broadcastLiveExamStatusUpdate(c, config, body.Status)
 
-	//if err != nil {
-	//	return err
-	//}
-
 	return c.NoContent(http.StatusOK)
 }
 
