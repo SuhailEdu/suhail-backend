@@ -24,7 +24,6 @@ func registerMelodyHandlers(e *echo.Echo, config *Config) {
 
 	// for participants
 	wsGroup.GET("/live/:id", func(c echo.Context) error {
-		fmt.Println("new connection try")
 		examId, err := uuid.Parse(c.Param("id"))
 
 		if err != nil {
@@ -33,7 +32,6 @@ func registerMelodyHandlers(e *echo.Echo, config *Config) {
 
 		authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
 		userId := authenticatedUser.ID
-		fmt.Println("new connection try 2")
 
 		isParticipant, err := isExamParticipant(c, config, examId, userId)
 		if err != nil {
@@ -42,11 +40,11 @@ func registerMelodyHandlers(e *echo.Echo, config *Config) {
 		if !isParticipant {
 			return unAuthorizedError(c, "unauthorized user")
 		}
-		fmt.Println("new connection try 3")
 
 		metadata := map[string]interface{}{
 			"examId":   examId,
 			"userId":   authenticatedUser.ID,
+			"token":    authenticatedUser.Hash,
 			"isAuthor": false,
 		}
 
@@ -83,15 +81,13 @@ func registerMelodyHandlers(e *echo.Echo, config *Config) {
 	})
 
 	config.melody.HandleDisconnect(func(s *melody.Session) {
-		fmt.Println("hi")
-		fmt.Println(s.Keys["examId"])
 
 		isAuthor, ok := s.Keys["isAuthor"]
 		if !ok {
 			return
 
 		}
-		if !isAuthor.(bool) {
+		if isAuthor.(bool) {
 			return
 		}
 
@@ -111,19 +107,19 @@ func registerMelodyHandlers(e *echo.Echo, config *Config) {
 			return
 		}
 
+		fmt.Println(token, userId, examId, isAuthor, "dis connect")
 		broadcastParticipantConnection(config, examId, userId, token, false)
 	})
 
 	config.melody.HandleConnect(func(s *melody.Session) {
-		fmt.Println("hi")
-		fmt.Println(s.Keys["examId"])
+		fmt.Println("connect handler")
 
 		isAuthor, ok := s.Keys["isAuthor"]
 		if !ok {
 			return
 
 		}
-		if !isAuthor.(bool) {
+		if isAuthor.(bool) {
 			return
 		}
 
@@ -183,10 +179,50 @@ func broadcastParticipantConnection(config *Config, examId uuid.UUID, userId uui
 
 	jsonEvent, _ := json.Marshal(statusEvent)
 
-	err := config.melody.BroadcastFilter(jsonEvent, func(s *melody.Session) bool {
+	sessions, err := config.melody.Sessions()
+	if err != nil {
+		return
+	}
 
-		authHeader := s.Request.Header.Get("Sec-WebSocket-Protocol")
-		return bytes.Equal([]byte(authHeader), token)
+	var examAuthorToken []byte
+
+	for _, session := range sessions {
+		exId, ok := session.Keys["examId"].(uuid.UUID)
+		if !ok {
+			continue
+		}
+
+		if exId != examId {
+			continue
+		}
+
+		isExAuthor, ok := session.Keys["isAuthor"].(bool)
+		if !ok {
+			continue
+		}
+		if isExAuthor {
+
+			token, ok := session.Keys["token"].([]byte)
+			if !ok {
+				break
+			}
+
+			examAuthorToken = token
+			break
+
+		}
+
+	}
+
+	err = config.melody.BroadcastFilter(jsonEvent, func(s *melody.Session) bool {
+
+		authorToken, ok := s.Keys["token"].([]byte)
+		if !ok {
+			return false
+		}
+		//return authorToken
+
+		return bytes.Equal(authorToken, examAuthorToken)
 
 	})
 
