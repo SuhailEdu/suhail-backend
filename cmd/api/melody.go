@@ -141,22 +141,6 @@ func registerMelodyHandlers(e *echo.Echo, config *Config) {
 
 		broadcastParticipantConnection(config, examId, userId, token, true)
 	})
-
-	//config.melody.HandleConnect(func(s *melody.Session) {
-	//	fmt.Println("New connection!")
-	//})
-	//
-	//config.melody.HandleMessage(func(s *melody.Session, msg []byte) {
-	//	err := config.melody.Broadcast(msg)
-	//	if err != nil {
-	//		return
-	//	}
-	//	fmt.Println("broadcast", string(msg))
-	//})
-	//
-	//config.melody.HandleError(func(s *melody.Session, err error) {
-	//	fmt.Println("Error occurred:", err)
-	//})
 }
 
 func broadcastParticipantConnection(config *Config, examId uuid.UUID, userId uuid.UUID, token []byte, isConnect bool) {
@@ -220,7 +204,6 @@ func broadcastParticipantConnection(config *Config, examId uuid.UUID, userId uui
 		if !ok {
 			return false
 		}
-		//return authorToken
 
 		return bytes.Equal(authorToken, examAuthorToken)
 

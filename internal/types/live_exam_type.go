@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/SuhailEdu/suhail-backend/internal/database/schema"
 	"github.com/google/uuid"
+	"slices"
 	"time"
 )
 
@@ -54,6 +55,7 @@ type LiveExamParticipant struct {
 	LastName         string    `json:"last_name"`
 	Status           string    `json:"status"`
 	AttendanceStatus string    `json:"attendance_status"`
+	IsOnline         bool      `json:"is_online"`
 }
 
 func SerializeGetLiveExamQuestionsForManager(questions []schema.GetLiveExamQuestionForManagerRow) interface{} {
@@ -89,10 +91,16 @@ func SerializeGetLiveExamQuestionsForManager(questions []schema.GetLiveExamQuest
 
 }
 
-func SerializeGetLiveExamParticipants(participants []schema.GetLiveExamParticipantsRow) []LiveExamParticipant {
+func SerializeGetLiveExamParticipants(participants []schema.GetLiveExamParticipantsRow, connectionsList []uuid.UUID) []LiveExamParticipant {
 
 	ps := make([]LiveExamParticipant, len(participants))
+
 	for i, participant := range participants {
+		isOnline := false
+		if slices.Contains(connectionsList, participant.User.ID) {
+			isOnline = true
+		}
+
 		ps[i] = LiveExamParticipant{
 			ID:               participant.User.ID,
 			ExamId:           participant.ExamParticipant.ExamID,
@@ -101,6 +109,7 @@ func SerializeGetLiveExamParticipants(participants []schema.GetLiveExamParticipa
 			LastName:         participant.User.LastName,
 			Status:           participant.ExamParticipant.Status,
 			AttendanceStatus: participant.ExamParticipant.AttendanceStatus.String,
+			IsOnline:         isOnline,
 		}
 	}
 

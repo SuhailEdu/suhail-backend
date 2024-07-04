@@ -65,7 +65,49 @@ func (config *Config) getLiveExamParticipantsForManager(c echo.Context) error {
 		return serverError(c, err)
 	}
 
-	return dataResponse(c, types.SerializeGetLiveExamParticipants(participants))
+	ps := getExamParticipantsConnectionStatus(config, examId)
+
+	return dataResponse(c, types.SerializeGetLiveExamParticipants(participants, ps))
+}
+func getExamParticipantsConnectionStatus(config *Config, examId uuid.UUID) []uuid.UUID {
+
+	var ps []uuid.UUID
+
+	sessions, err := config.melody.Sessions()
+	if err != nil {
+		return []uuid.UUID{}
+	}
+
+	for _, s := range sessions {
+		sessionExamId, ok := s.Keys["examId"].(uuid.UUID)
+		if !ok {
+			continue
+		}
+
+		if examId != sessionExamId {
+			continue
+		}
+
+		isAuthor, ok := s.Keys["isAuthor"].(bool)
+		if !ok {
+			continue
+		}
+
+		if isAuthor {
+			continue
+		}
+
+		participantId, ok := s.Keys["userId"].(uuid.UUID)
+
+		if !ok {
+			continue
+		}
+
+		ps = append(ps, participantId)
+	}
+
+	return ps
+
 }
 
 func (config *Config) getLiveExamQuestionsForManager(c echo.Context) error {
