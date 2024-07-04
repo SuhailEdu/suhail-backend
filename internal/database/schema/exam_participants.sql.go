@@ -28,6 +28,29 @@ func (q *Queries) CheckParticipant(ctx context.Context, arg CheckParticipantPara
 	return exists, err
 }
 
+const checkParticipantByToken = `-- name: CheckParticipantByToken :one
+SELECT EXISTS(SELECT 1
+              FROM exam_participants
+              WHERE exam_id = $1
+                AND user_id = (SELECT user_id
+                               FROM tokens
+                               WHERE tokens.hash = $2
+                                 AND tokens.expiry > now()
+                               LIMIT 1))
+`
+
+type CheckParticipantByTokenParams struct {
+	ExamID uuid.UUID
+	Hash   []byte
+}
+
+func (q *Queries) CheckParticipantByToken(ctx context.Context, arg CheckParticipantByTokenParams) (bool, error) {
+	row := q.db.QueryRow(ctx, checkParticipantByToken, arg.ExamID, arg.Hash)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const createExamParticipant = `-- name: CreateExamParticipant :exec
 INSERT INTO exam_participants (exam_id, email, status)
 VALUES ($1, $2, $3)

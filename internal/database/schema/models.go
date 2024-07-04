@@ -42,7 +42,6 @@ type ExamQuestion struct {
 }
 
 type QuestionAnswer struct {
-	ID         uuid.UUID
 	UserID     uuid.UUID
 	QuestionID uuid.UUID
 	Answer     string

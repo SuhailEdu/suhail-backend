@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/labstack/echo/v4"
+	"github.com/olahol/melody"
 	_ "golang.org/x/crypto/bcrypt"
 	"net/http"
 )
@@ -113,20 +115,11 @@ func (config *Config) updateExamStatus(c echo.Context) error {
 		return serverError(c, err)
 	}
 
-	statusEvent := map[string]interface{}{
-		"type": "LIVE_EXAM_STATUS_UPDATED",
-		"payload": map[string]interface{}{
-			"status": body.Status,
-		},
-	}
+	broadcastLiveExamStatusUpdate(c, config, body.Status)
 
-	jsonEvent, _ := json.Marshal(statusEvent)
-
-	err = config.melody.Broadcast(jsonEvent)
-
-	if err != nil {
-		return err
-	}
+	//if err != nil {
+	//	return err
+	//}
 
 	return c.NoContent(http.StatusOK)
 }
@@ -214,5 +207,53 @@ func isExamParticipant(c echo.Context, config *Config, examId uuid.UUID, partici
 	}
 
 	return isParticipant, nil
+
+}
+
+func broadcastLiveExamStatusUpdate(c echo.Context, config *Config, status string) {
+
+	statusEvent := map[string]interface{}{
+		"type": "LIVE_EXAM_STATUS_UPDATED",
+		"payload": map[string]interface{}{
+			"status": status,
+		},
+	}
+
+	jsonEvent, _ := json.Marshal(statusEvent)
+	//err := config.melody.Broadcast(jsonEvent)
+	//if err != nil {
+	//	config.logger.Println(err)
+	//	return
+	//}
+
+	examId, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		return
+	}
+
+	_ = config.melody.BroadcastFilter(jsonEvent, func(s *melody.Session) bool {
+		fmt.Println(s.Request.Header)
+
+		authHeader := s.Request.Header.Get("Sec-WebSocket-Protocol")
+		if authHeader == "" {
+			fmt.Println("auth header is empty")
+			return false
+
+		}
+
+		hash := sha256.Sum256([]byte(authHeader))
+
+		isParticipant, err := config.db.CheckParticipantByToken(s.Request.Context(), schema.CheckParticipantByTokenParams{
+			ExamID: examId,
+			Hash:   hash[:],
+		})
+
+		if err != nil {
+			fmt.Println(err)
+			return false
+		}
+
+		return isParticipant
+	})
 
 }
