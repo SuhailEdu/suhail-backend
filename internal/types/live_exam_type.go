@@ -121,7 +121,7 @@ func SerializeGetLiveExam(exam schema.Exam, questions []schema.ExamQuestion) int
 		fixedQuestion = append(fixedQuestion, LiveQuestionResource{
 			Id:        question.ID,
 			ExamId:    question.ExamID,
-			Title:     question.Title,
+			Title:     question.Question,
 			Type:      question.Type,
 			Options:   fixedAnswers,
 			CreatedAt: question.CreatedAt.Time,
