@@ -222,11 +222,6 @@ func (config *Config) storeAnswer(c echo.Context) error {
 		return serverError(c, err)
 	}
 
-	err = config.melody.Broadcast([]byte(fmt.Sprintf("New answer : %s", body.Answer)))
-	if err != nil {
-		return err
-	}
-
 	return c.NoContent(http.StatusOK)
 }
 func isExamParticipant(c echo.Context, config *Config, examId uuid.UUID, participantId uuid.UUID) (bool, error) {
