@@ -85,9 +85,15 @@ func (config *Config) updateExamStatus(c echo.Context) error {
 		return badRequestError(c, err)
 	}
 
-	status := c.FormValue("status")
+	var body struct {
+		Status string `json:"status" validate:"required"`
+	}
 
-	if status != "paused" && status != "finished" && status != "live" {
+	if err := c.Bind(&body); err != nil {
+		return badRequestError(c, errors.New("invalid status"))
+	}
+
+	if body.Status != "paused" && body.Status != "finished" && body.Status != "live" {
 		return badRequestError(c, errors.New("invalid status"))
 	}
 
@@ -97,7 +103,7 @@ func (config *Config) updateExamStatus(c echo.Context) error {
 	}
 
 	err = config.db.UpdateExamLiveStatus(c.Request().Context(), schema.UpdateExamLiveStatusParams{
-		LiveStatus: pgtype.Text{String: status, Valid: true},
+		LiveStatus: pgtype.Text{String: body.Status, Valid: true},
 		ID:         examId,
 	})
 
