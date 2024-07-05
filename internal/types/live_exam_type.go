@@ -119,6 +119,22 @@ func SerializeGetLiveExamParticipants(participants []schema.GetLiveExamParticipa
 }
 func SerializeGetLiveExam(exam schema.Exam, questions []schema.ExamQuestion, isIpAllowed bool) interface{} {
 
+	output := map[string]interface{}{
+		"exam": LiveExamResource{
+			Id:          exam.ID,
+			ExamTitle:   exam.Title,
+			UserId:      exam.UserID,
+			Status:      exam.VisibilityStatus,
+			CreatedAt:   exam.CreatedAt.Time,
+			UpdatedAt:   exam.UpdatedAt.Time,
+			LiveStatus:  exam.LiveStatus.String,
+			IsIpAllowed: isIpAllowed,
+		},
+	}
+	if !isIpAllowed {
+		return output
+	}
+
 	var fixedQuestion []LiveQuestionResource
 
 	for _, question := range questions {
@@ -140,18 +156,8 @@ func SerializeGetLiveExam(exam schema.Exam, questions []schema.ExamQuestion, isI
 
 	}
 
-	return map[string]interface{}{
-		"questions": fixedQuestion,
-		"exam": LiveExamResource{
-			Id:          exam.ID,
-			ExamTitle:   exam.Title,
-			UserId:      exam.UserID,
-			Status:      exam.VisibilityStatus,
-			CreatedAt:   exam.CreatedAt.Time,
-			UpdatedAt:   exam.UpdatedAt.Time,
-			LiveStatus:  exam.LiveStatus.String,
-			IsIpAllowed: isIpAllowed,
-		},
-	}
+	output["questions"] = fixedQuestion
+
+	return output
 
 }
