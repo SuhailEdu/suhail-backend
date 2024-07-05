@@ -61,7 +61,7 @@ func (q *Queries) GetLiveExamParticipants(ctx context.Context, examID uuid.UUID)
 }
 
 const getLiveExamQuestionForManager = `-- name: GetLiveExamQuestionForManager :many
-SELECT exam_questions.id, exam_questions.exam_id, exam_questions.question, exam_questions.answers, exam_questions.type, exam_questions.created_at, exam_questions.updated_at, exams.id, exams.user_id, exams.title, exams.slug, exams.visibility_status, exams.is_accessable, exams.created_at, exams.updated_at, exams.live_status
+SELECT exam_questions.id, exam_questions.exam_id, exam_questions.question, exam_questions.answers, exam_questions.type, exam_questions.created_at, exam_questions.updated_at, exams.id, exams.user_id, exams.title, exams.slug, exams.visibility_status, exams.is_accessable, exams.created_at, exams.updated_at, exams.live_status, exams.ip_range_start, exams.ip_range_end
 FROM exam_questions
          INNER JOIN exams ON exams.id = $1
 LIMIT 1
@@ -98,6 +98,8 @@ func (q *Queries) GetLiveExamQuestionForManager(ctx context.Context, id uuid.UUI
 			&i.Exam.CreatedAt,
 			&i.Exam.UpdatedAt,
 			&i.Exam.LiveStatus,
+			&i.Exam.IpRangeStart,
+			&i.Exam.IpRangeEnd,
 		); err != nil {
 			return nil, err
 		}

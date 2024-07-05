@@ -35,7 +35,6 @@ SELECT EXISTS(SELECT 1
                 AND user_id = (SELECT user_id
                                FROM tokens
                                WHERE tokens.hash = $2
-                                 AND tokens.expiry > now()
                                LIMIT 1))
 `
 

@@ -26,8 +26,10 @@ type ExamInput struct {
 }
 
 type UpdateExamInput struct {
-	ExamTitle string `json:"exam_title"`
-	Status    string `json:"status"`
+	ExamTitle    string `json:"exam_title"`
+	Status       string `json:"status"`
+	IpRangeStart string `json:"ip_range_start"`
+	IpRangeEnd   string `json:"ip_range_end"`
 }
 
 type UpdateQuestionInput struct {
@@ -77,6 +79,8 @@ type ExamResource struct {
 	QuestionsCount    int64     `json:"questions_count"`
 	ParticipantsCount int64     `json:"participants_count"`
 	IsMyExam          bool      `json:"is_my_exam"`
+	IpRangeStart      string    `json:"ip_range_start"`
+	IpRangeEnd        string    `json:"ip_range_end"`
 }
 
 type ExamListResource struct {
@@ -222,12 +226,14 @@ func SerializeParticipatedExams(exams []schema.GetParticipatedExamsRow) []ExamRe
 func SerializeUpdateExam(exam schema.Exam) ExamResource {
 
 	return ExamResource{
-		Id:        exam.ID,
-		UserId:    exam.UserID,
-		ExamTitle: exam.Title,
-		Status:    exam.VisibilityStatus,
-		CreatedAt: exam.CreatedAt.Time,
-		UpdatedAt: exam.UpdatedAt.Time,
+		Id:           exam.ID,
+		UserId:       exam.UserID,
+		ExamTitle:    exam.Title,
+		Status:       exam.VisibilityStatus,
+		CreatedAt:    exam.CreatedAt.Time,
+		UpdatedAt:    exam.UpdatedAt.Time,
+		IpRangeStart: exam.IpRangeStart.String,
+		IpRangeEnd:   exam.IpRangeEnd.String,
 	}
 
 }

@@ -19,6 +19,8 @@ type Exam struct {
 	CreatedAt        pgtype.Timestamp
 	UpdatedAt        pgtype.Timestamp
 	LiveStatus       pgtype.Text
+	IpRangeStart     pgtype.Text
+	IpRangeEnd       pgtype.Text
 }
 
 type ExamParticipant struct {

@@ -11,8 +11,10 @@ WHERE id = $1;
 -- name: UpdateExam :exec
 UPDATE exams
 SET title             = $1,
-    visibility_status = $2
-WHERE id = $3
+    visibility_status = $2,
+    ip_range_start    = $3,
+    ip_range_end      = $4
+WHERE id = $5
 
 RETURNING *
 ;

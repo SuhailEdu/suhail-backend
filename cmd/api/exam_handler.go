@@ -176,8 +176,10 @@ func (config *Config) updateExam(c echo.Context) error {
 	var examSchema types.UpdateExamInput
 
 	rules := govalidator.MapData{
-		"exam_title": []string{"required", "min:4", "max:30"},
-		"status":     []string{"required", "in:public,private"},
+		"exam_title":     []string{"required", "min:4", "max:30"},
+		"status":         []string{"required", "in:public,private"},
+		"ip_range_start": []string{"ip_v4"},
+		"ip_range_end":   []string{"ip_v4"},
 	}
 
 	opts := govalidator.Options{
@@ -198,10 +200,26 @@ func (config *Config) updateExam(c echo.Context) error {
 		ID:               examId,
 		Title:            examSchema.ExamTitle,
 		VisibilityStatus: examSchema.Status,
+		IpRangeStart: pgtype.Text{
+			String: examSchema.IpRangeStart,
+			Valid:  true,
+		},
+		IpRangeEnd: pgtype.Text{
+			String: examSchema.IpRangeEnd,
+			Valid:  true,
+		},
 	}
 
 	exam.Title = examSchema.ExamTitle
 	exam.VisibilityStatus = examSchema.Status
+	exam.IpRangeStart = pgtype.Text{
+		String: examSchema.IpRangeStart,
+		Valid:  true,
+	}
+	exam.IpRangeEnd = pgtype.Text{
+		String: examSchema.IpRangeEnd,
+		Valid:  true,
+	}
 
 	err = config.db.UpdateExam(c.Request().Context(), updateParams)
 
