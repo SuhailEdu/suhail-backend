@@ -9,35 +9,36 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const checkQuestionExits = `-- name: CheckQuestionExits :one
+const checkQuestionExists = `-- name: CheckQuestionExists :one
 SELECT EXISTS(SELECT 1 FROM exam_questions WHERE id = $1 AND exam_id = $2)
 `
 
-type CheckQuestionExitsParams struct {
+type CheckQuestionExistsParams struct {
 	ID     uuid.UUID
 	ExamID uuid.UUID
 }
 
-func (q *Queries) CheckQuestionExits(ctx context.Context, arg CheckQuestionExitsParams) (bool, error) {
-	row := q.db.QueryRow(ctx, checkQuestionExits, arg.ID, arg.ExamID)
+func (q *Queries) CheckQuestionExists(ctx context.Context, arg CheckQuestionExistsParams) (bool, error) {
+	row := q.db.QueryRow(ctx, checkQuestionExists, arg.ID, arg.ExamID)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
 }
 
-const checkQuestionTitleExits = `-- name: CheckQuestionTitleExits :one
+const checkQuestionTitleExists = `-- name: CheckQuestionTitleExists :one
 SELECT EXISTS(SELECT 1 FROM exam_questions WHERE question = $1 AND exam_id = $2)
 `
 
-type CheckQuestionTitleExitsParams struct {
+type CheckQuestionTitleExistsParams struct {
 	Question string
 	ExamID   uuid.UUID
 }
 
-func (q *Queries) CheckQuestionTitleExits(ctx context.Context, arg CheckQuestionTitleExitsParams) (bool, error) {
-	row := q.db.QueryRow(ctx, checkQuestionTitleExits, arg.Question, arg.ExamID)
+func (q *Queries) CheckQuestionTitleExists(ctx context.Context, arg CheckQuestionTitleExistsParams) (bool, error) {
+	row := q.db.QueryRow(ctx, checkQuestionTitleExists, arg.Question, arg.ExamID)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
@@ -100,6 +101,27 @@ type DeleteQuestionParams struct {
 func (q *Queries) DeleteQuestion(ctx context.Context, arg DeleteQuestionParams) error {
 	_, err := q.db.Exec(ctx, deleteQuestion, arg.ID, arg.UserID, arg.ID_2)
 	return err
+}
+
+const getExamIPRangesByQuestionId = `-- name: GetExamIPRangesByQuestionId :one
+SELECT exams.id, exams.ip_range_start, exams.ip_range_end
+FROM exam_questions
+         INNER JOIN exams ON exams.id = exam_questions.exam_id
+WHERE exam_questions.id = $1
+LIMIT 1
+`
+
+type GetExamIPRangesByQuestionIdRow struct {
+	ID           uuid.UUID
+	IpRangeStart pgtype.Text
+	IpRangeEnd   pgtype.Text
+}
+
+func (q *Queries) GetExamIPRangesByQuestionId(ctx context.Context, id uuid.UUID) (GetExamIPRangesByQuestionIdRow, error) {
+	row := q.db.QueryRow(ctx, getExamIPRangesByQuestionId, id)
+	var i GetExamIPRangesByQuestionIdRow
+	err := row.Scan(&i.ID, &i.IpRangeStart, &i.IpRangeEnd)
+	return i, err
 }
 
 const getExamQuestions = `-- name: GetExamQuestions :many

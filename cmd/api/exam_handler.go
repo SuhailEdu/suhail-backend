@@ -360,7 +360,7 @@ func (config *Config) addQuestionsToExam(c echo.Context) error {
 		return badRequestError(c, err)
 	}
 
-	alreadyExists, err := config.db.CheckQuestionTitleExits(c.Request().Context(), schema.CheckQuestionTitleExitsParams{
+	alreadyExists, err := config.db.CheckQuestionTitleExists(c.Request().Context(), schema.CheckQuestionTitleExistsParams{
 		Question: questionInput.Question.Title,
 		ExamID:   examId,
 	})

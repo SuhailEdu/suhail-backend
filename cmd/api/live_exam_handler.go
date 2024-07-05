@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/SuhailEdu/suhail-backend/internal/database/schema"
 	"github.com/SuhailEdu/suhail-backend/internal/types"
 	_ "github.com/go-playground/validator/v10"
@@ -53,12 +52,8 @@ func (config *Config) getLiveExam(c echo.Context) error {
 		end := net.ParseIP(exam.IpRangeEnd.String)
 
 		userIP := net.ParseIP(c.RealIP())
-		fmt.Println(start.To4())
-		fmt.Println(end.To4())
-		fmt.Println(userIP.To4())
 
 		if start.To4() != nil && end.To4() != nil && userIP.To4() != nil {
-			fmt.Println("here")
 
 			if bytes.Compare(start, userIP) > 0 || bytes.Compare(end, userIP) < 0 {
 				isIpAllowed = false
@@ -218,22 +213,29 @@ func (config *Config) storeAnswer(c echo.Context) error {
 		return unAuthorizedError(c, errors.New("unauthorized access"))
 	}
 
-	//questionUUID, err := uuid.FromBytes([]byte(body.QuestionId))
-	//if err != nil {
-	//	fmt.Println(err)
-	//	fmt.Println(body.QuestionId)
-	//	return badRequestError(c, errors.New("invalid question id"))
-	//}
-
-	fmt.Println(body.QuestionId)
-
-	isQuestionExits, err := config.db.CheckQuestionExits(c.Request().Context(), schema.CheckQuestionExitsParams{
+	isQuestionExists, err := config.db.CheckQuestionExists(c.Request().Context(), schema.CheckQuestionExistsParams{
 		ID:     body.QuestionId,
 		ExamID: examId,
 	})
 
-	if !isQuestionExits {
+	if !isQuestionExists {
 		return badRequestError(c, errors.New("invalid question id"))
+	}
+	exam, err := config.db.GetExamIPRangesByQuestionId(c.Request().Context(), body.QuestionId)
+
+	if err != nil {
+		return serverError(c, err)
+
+	}
+	if exam.IpRangeStart.String != "" && exam.IpRangeEnd.String != "" {
+		isAllowed, err := isIPInIpRange(exam.IpRangeStart.String, exam.IpRangeEnd.String, c.RealIP())
+		if err != nil {
+			return serverError(c, err)
+		}
+		if !isAllowed {
+			return forbiddenError(c, "you are not allowed to participate in this exam")
+		}
+
 	}
 
 	err = config.db.UpdateAnswer(c.Request().Context(), schema.UpdateAnswerParams{
@@ -289,11 +291,9 @@ func broadcastLiveExamStatusUpdate(c echo.Context, config *Config, status string
 	}
 
 	_ = config.melody.BroadcastFilter(jsonEvent, func(s *melody.Session) bool {
-		fmt.Println(s.Request.Header)
 
 		authHeader := s.Request.Header.Get("Sec-WebSocket-Protocol")
 		if authHeader == "" {
-			fmt.Println("auth header is empty")
 			return false
 
 		}
@@ -306,11 +306,28 @@ func broadcastLiveExamStatusUpdate(c echo.Context, config *Config, status string
 		})
 
 		if err != nil {
-			fmt.Println(err)
 			return false
 		}
 
 		return isParticipant
 	})
 
+}
+
+func isIPInIpRange(start string, end string, target string) (bool, error) {
+	startIP := net.ParseIP(start)
+	endIP := net.ParseIP(end)
+
+	userIP := net.ParseIP(target)
+
+	if startIP.To4() != nil && endIP.To4() != nil && userIP.To4() != nil {
+
+		// check ip not in rage
+		if bytes.Compare(startIP, userIP) > 0 || bytes.Compare(endIP, userIP) < 0 {
+			return false, nil
+		}
+		return true, nil
+
+	}
+	return false, errors.New("invalid ip range")
 }

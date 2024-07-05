@@ -31,6 +31,11 @@ func unAuthorizedError(c echo.Context, err interface{}) error {
 	errors := map[string]interface{}{"error": err}
 	return c.JSON(http.StatusUnauthorized, errors)
 }
+func forbiddenError(c echo.Context, err interface{}) error {
+
+	errors := map[string]interface{}{"error": err}
+	return c.JSON(http.StatusForbidden, errors)
+}
 
 func dataResponse(c echo.Context, data interface{}) error {
 

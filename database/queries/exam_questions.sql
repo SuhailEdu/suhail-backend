@@ -27,11 +27,11 @@ LIMIT 1
 ;
 
 
--- name: CheckQuestionTitleExits :one
+-- name: CheckQuestionTitleExists :one
 SELECT EXISTS(SELECT 1 FROM exam_questions WHERE question = $1 AND exam_id = $2);
 ;
 
--- name: CheckQuestionExits :one
+-- name: CheckQuestionExists :one
 SELECT EXISTS(SELECT 1 FROM exam_questions WHERE id = $1 AND exam_id = $2);
 ;
 
@@ -47,5 +47,13 @@ WHERE exam_questions.id = $1
 SELECT *
 FROM exam_questions
 WHERE exam_id = $1
+LIMIT 1
+;
+
+-- name: GetExamIPRangesByQuestionId :one
+SELECT exams.id, exams.ip_range_start, exams.ip_range_end
+FROM exam_questions
+         INNER JOIN exams ON exams.id = exam_questions.exam_id
+WHERE exam_questions.id = $1
 LIMIT 1
 ;
