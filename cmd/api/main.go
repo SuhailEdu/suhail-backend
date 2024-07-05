@@ -46,6 +46,8 @@ func main() {
 	}
 	e := echo.New()
 
+	e.IPExtractor = echo.ExtractIPDirect()
+
 	registerMelodyHandlers(e, config)
 
 	e.Use(middleware.CORS())

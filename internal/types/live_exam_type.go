@@ -9,13 +9,14 @@ import (
 )
 
 type LiveExamResource struct {
-	Id         uuid.UUID `json:"id"`
-	ExamTitle  string    `json:"exam_title"`
-	UserId     uuid.UUID `json:"user_id"`
-	Status     string    `json:"status"`
-	LiveStatus string    `json:"live_status"`
-	CreatedAt  time.Time `json:"created_at"`
-	UpdatedAt  time.Time `json:"updated_at"`
+	Id          uuid.UUID `json:"id"`
+	ExamTitle   string    `json:"exam_title"`
+	UserId      uuid.UUID `json:"user_id"`
+	Status      string    `json:"status"`
+	LiveStatus  string    `json:"live_status"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	IsIpAllowed bool      `json:"is_ip_allowed"`
 }
 
 type LiveQuestionResource struct {
@@ -116,7 +117,7 @@ func SerializeGetLiveExamParticipants(participants []schema.GetLiveExamParticipa
 	return ps
 
 }
-func SerializeGetLiveExam(exam schema.Exam, questions []schema.ExamQuestion) interface{} {
+func SerializeGetLiveExam(exam schema.Exam, questions []schema.ExamQuestion, isIpAllowed bool) interface{} {
 
 	var fixedQuestion []LiveQuestionResource
 
@@ -142,13 +143,14 @@ func SerializeGetLiveExam(exam schema.Exam, questions []schema.ExamQuestion) int
 	return map[string]interface{}{
 		"questions": fixedQuestion,
 		"exam": LiveExamResource{
-			Id:         exam.ID,
-			ExamTitle:  exam.Title,
-			UserId:     exam.UserID,
-			Status:     exam.VisibilityStatus,
-			CreatedAt:  exam.CreatedAt.Time,
-			UpdatedAt:  exam.UpdatedAt.Time,
-			LiveStatus: exam.LiveStatus.String,
+			Id:          exam.ID,
+			ExamTitle:   exam.Title,
+			UserId:      exam.UserID,
+			Status:      exam.VisibilityStatus,
+			CreatedAt:   exam.CreatedAt.Time,
+			UpdatedAt:   exam.UpdatedAt.Time,
+			LiveStatus:  exam.LiveStatus.String,
+			IsIpAllowed: isIpAllowed,
 		},
 	}
 

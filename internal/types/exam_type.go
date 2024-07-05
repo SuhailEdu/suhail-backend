@@ -291,6 +291,8 @@ func SerializeSingleExam(exam schema.FindMyExamRow, isMyExam bool) ExamResource 
 		IsMyExam:          isMyExam,
 		QuestionsCount:    exam.QuestionsCount,
 		ParticipantsCount: exam.ParticipantsCount,
+		IpRangeStart:      exam.IpRangeStart.String,
+		IpRangeEnd:        exam.IpRangeEnd.String,
 	}
 
 }

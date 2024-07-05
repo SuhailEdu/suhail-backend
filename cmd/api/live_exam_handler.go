@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
@@ -13,10 +14,12 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/olahol/melody"
 	_ "golang.org/x/crypto/bcrypt"
+	"net"
 	"net/http"
 )
 
 func (config *Config) getLiveExam(c echo.Context) error {
+
 	examId, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		return badRequestError(c, err)
@@ -43,7 +46,28 @@ func (config *Config) getLiveExam(c echo.Context) error {
 	if err != nil {
 		return serverError(c, err)
 	}
-	return dataResponse(c, types.SerializeGetLiveExam(exam, questions))
+
+	isIpAllowed := true
+	if exam.IpRangeStart.String != "" && exam.IpRangeEnd.String != "" {
+		start := net.ParseIP(exam.IpRangeStart.String)
+		end := net.ParseIP(exam.IpRangeEnd.String)
+
+		userIP := net.ParseIP(c.RealIP())
+		fmt.Println(start.To4())
+		fmt.Println(end.To4())
+		fmt.Println(userIP.To4())
+
+		if start.To4() != nil && end.To4() != nil && userIP.To4() != nil {
+			fmt.Println("here")
+
+			if bytes.Compare(start, userIP) > 0 || bytes.Compare(end, userIP) < 0 {
+				isIpAllowed = false
+			}
+
+		}
+	}
+
+	return dataResponse(c, types.SerializeGetLiveExam(exam, questions, isIpAllowed))
 
 }
 

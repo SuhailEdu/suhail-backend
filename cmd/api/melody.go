@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/SuhailEdu/suhail-backend/internal/database/schema"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -107,12 +106,10 @@ func registerMelodyHandlers(e *echo.Echo, config *Config) {
 			return
 		}
 
-		fmt.Println(token, userId, examId, isAuthor, "dis connect")
 		broadcastParticipantConnection(config, examId, userId, token, false)
 	})
 
 	config.melody.HandleConnect(func(s *melody.Session) {
-		fmt.Println("connect handler")
 
 		isAuthor, ok := s.Keys["isAuthor"]
 		if !ok {
@@ -151,8 +148,6 @@ func broadcastParticipantConnection(config *Config, examId uuid.UUID, userId uui
 	} else {
 		eventType = "PARTICIPANT_DISCONNECTED"
 	}
-	fmt.Println("broadcasting participant")
-	fmt.Println("isConnect:", isConnect)
 
 	statusEvent := map[string]interface{}{
 		"type": eventType,
