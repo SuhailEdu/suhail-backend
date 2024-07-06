@@ -524,7 +524,12 @@ func (config *Config) getExamQuestions(c echo.Context) error {
 		return serverError(c, err)
 	}
 
-	return dataResponse(c, types.SerializeGetExamQuestions(questions))
+	exam, err := config.db.GetExamById(c.Request().Context(), examId)
+	if err != nil {
+		return serverError(c, err)
+
+	}
+	return dataResponse(c, types.SerializeGetExamQuestions(questions, exam))
 }
 
 func (config *Config) getExamParticipants(c echo.Context) error {

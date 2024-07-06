@@ -325,7 +325,7 @@ func SerializeSingleParicipatedExam(exam []schema.FindMyParticipatedExamRow) Exa
 
 }
 
-func SerializeGetExamQuestions(questions []schema.ExamQuestion) []QuestionResource {
+func SerializeGetExamQuestions(questions []schema.ExamQuestion, exam schema.Exam) map[string]interface{} {
 	var questionResource []QuestionResource
 	for _, question := range questions {
 		var answers []OptionResource
@@ -341,7 +341,10 @@ func SerializeGetExamQuestions(questions []schema.ExamQuestion) []QuestionResour
 		})
 	}
 
-	return questionResource
+	return map[string]interface{}{
+		"questions":   questionResource,
+		"live_status": exam.LiveStatus.String,
+	}
 
 }
 
