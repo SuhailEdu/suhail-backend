@@ -44,6 +44,8 @@ func registerApiRoutes(e *echo.Echo, config *Config) {
 	homeGroup.PATCH("/exams/:id/questions/:questionId", config.updateQuestion)
 	homeGroup.DELETE("/exams/:id/questions/:questionId", config.deleteQuestion)
 
+	homeGroup.GET("/exams/:id/participants/:participantId/answers", config.getParticipantAnswers)
+
 	homeGroup.GET("/hello", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
 	})

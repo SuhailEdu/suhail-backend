@@ -9,7 +9,66 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const getParticipantAnswers = `-- name: GetParticipantAnswers :many
+SELECT exams.id          as exam_id,
+       question_answers.user_id,
+       exam_questions.id as question_id,
+       exam_questions.type,
+       exam_questions.answers,
+       question_answers.answer,
+       exam_questions.question
+FROM exams
+         LEFT JOIN exam_questions ON exam_questions.exam_id = exams.id
+         LEFT JOIN question_answers ON question_answers.question_id = exam_questions.id
+WHERE exams.id = $1
+  AND question_answers.user_id = $2
+`
+
+type GetParticipantAnswersParams struct {
+	ID     uuid.UUID
+	UserID uuid.UUID
+}
+
+type GetParticipantAnswersRow struct {
+	ExamID     uuid.UUID
+	UserID     pgtype.UUID
+	QuestionID pgtype.UUID
+	Type       pgtype.Text
+	Answers    []byte
+	Answer     pgtype.Text
+	Question   pgtype.Text
+}
+
+func (q *Queries) GetParticipantAnswers(ctx context.Context, arg GetParticipantAnswersParams) ([]GetParticipantAnswersRow, error) {
+	rows, err := q.db.Query(ctx, getParticipantAnswers, arg.ID, arg.UserID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetParticipantAnswersRow
+	for rows.Next() {
+		var i GetParticipantAnswersRow
+		if err := rows.Scan(
+			&i.ExamID,
+			&i.UserID,
+			&i.QuestionID,
+			&i.Type,
+			&i.Answers,
+			&i.Answer,
+			&i.Question,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
 
 const updateAnswer = `-- name: UpdateAnswer :exec
 INSERT INTO question_answers (question_id, user_id, answer)
