@@ -77,10 +77,10 @@ func (config *Config) registerUser(c echo.Context) error {
 	var userInput registrationSchema
 
 	rules := govalidator.MapData{
-		"first_name": []string{"required", "between:3,12"},
-		"last_name":  []string{"required", "between:3,12"},
-		"email":      []string{"required", "min:4", "max:20", "email"},
-		"password":   []string{"required", "min:8", "max:20"},
+		"first_name": []string{"required", "between:3,30"},
+		"last_name":  []string{"required", "between:3,30"},
+		"email":      []string{"required", "min:4", "max:255", "email"},
+		"password":   []string{"required", "min:8", "max:255"},
 	}
 
 	opts := govalidator.Options{
