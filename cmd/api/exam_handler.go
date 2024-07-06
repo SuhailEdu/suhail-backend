@@ -95,7 +95,7 @@ func (config *Config) createExam(c echo.Context) error {
 
 	if len(e) > 0 {
 
-		return validationError(c, e)
+		return validationError(c, e, types.GENERIC_VALIDATION_ERROR)
 	}
 
 	authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
@@ -105,17 +105,19 @@ func (config *Config) createExam(c echo.Context) error {
 		UserID: authenticatedUser.ID,
 	})
 	if examTitleExists {
-		return validationError(c, map[string]interface{}{
+		vError := map[string]string{
 			"exam_title": "You already have an exam with this title.",
-		})
+		}
+		return validationError(c, formatCustomValidationError(vError), types.GENERIC_VALIDATION_ERROR)
 
 	}
 
 	isCorrect, questionErrors := validations.ValidateQuestions(examSchema.Questions...)
 	if !isCorrect {
-		return validationError(c, map[string]interface{}{
+		vError := map[string]interface{}{
 			"questions": questionErrors,
-		})
+		}
+		return validationError(c, vError, types.QUESTIONS_VALIDATION_ERROR)
 	}
 
 	examParams := schema.CreateExamParams{
@@ -193,7 +195,7 @@ func (config *Config) updateExam(c echo.Context) error {
 
 	if len(e) > 0 {
 
-		return validationError(c, e)
+		return validationError(c, e, types.GENERIC_VALIDATION_ERROR)
 	}
 
 	updateParams := schema.UpdateExamParams{
@@ -289,7 +291,7 @@ func (config *Config) updateQuestion(c echo.Context) error {
 	e := v.ValidateJSON()
 
 	if len(e) > 0 {
-		return validationError(c, e)
+		return validationError(c, e, types.GENERIC_VALIDATION_ERROR)
 	}
 
 	var options []types.OptionInput
@@ -309,7 +311,7 @@ func (config *Config) updateQuestion(c echo.Context) error {
 	isCorrect, vErrors := validations.ValidateQuestions(question)
 
 	if !isCorrect {
-		return validationError(c, vErrors)
+		return validationError(c, vErrors, types.QUESTIONS_VALIDATION_ERROR)
 	}
 
 	jsonOptions, _ := json.Marshal(question.Options)
@@ -370,16 +372,17 @@ func (config *Config) addQuestionsToExam(c echo.Context) error {
 	}
 
 	if alreadyExists {
-		return validationError(c, map[string]string{
-			"title": "You already have a question with this title.",
-		})
-	}
 
-	fmt.Println(questionInput.Question.Title)
+		vError := map[string]string{
+			"title": "You already have a question with this title.",
+		}
+
+		return validationError(c, formatCustomValidationError(vError), types.GENERIC_VALIDATION_ERROR)
+	}
 
 	isCorrect, vError := validations.ValidateQuestions([]types.QuestionInput{questionInput.Question}...)
 	if !isCorrect {
-		return validationError(c, vError)
+		return validationError(c, vError, types.QUESTIONS_VALIDATION_ERROR)
 	}
 
 	jsonOptions, err := json.Marshal(questionInput.Question.Options)
@@ -476,13 +479,16 @@ func (config *Config) inviteUsersToExam(c echo.Context) error {
 		return serverError(c, err)
 	}
 	if len(emails.Emails) == 0 {
-		return validationError(c, map[string]string{"emails": "no email address"})
+		vError := map[string]string{"emails": "no email address"}
+
+		return validationError(c, formatCustomValidationError(vError), types.GENERIC_VALIDATION_ERROR)
 	}
 
 	for _, email := range emails.Emails {
 		_, err = mail.ParseAddress(email)
 		if err != nil {
-			return validationError(c, map[string]string{"emails": fmt.Sprintf("invalid email address: %s", email)})
+			vError := map[string]string{"emails": fmt.Sprintf("invalid email address: %s", email)}
+			return validationError(c, formatCustomValidationError(vError), types.GENERIC_VALIDATION_ERROR)
 		}
 		//emailExists, _ := config.db.CheckEmailUniqueness(c.Request().Context(), email)
 		//
@@ -574,13 +580,19 @@ func (config *Config) removeParticipants(c echo.Context) error {
 		return serverError(c, err)
 	}
 	if len(emails.Emails) == 0 {
-		return validationError(c, map[string]string{"emails": "no email address"})
+		vError := map[string]string{
+			"emails": "no email address provided",
+		}
+		return validationError(c, formatCustomValidationError(vError), types.GENERIC_VALIDATION_ERROR)
 	}
 
 	for _, email := range emails.Emails {
 		_, err = mail.ParseAddress(email)
 		if err != nil {
-			return validationError(c, map[string]string{"emails": fmt.Sprintf("invalid email address: %s", email)})
+			vError := map[string]string{
+				"emails": fmt.Sprintf("invalid email address: %s", email),
+			}
+			return validationError(c, formatCustomValidationError(vError), types.GENERIC_VALIDATION_ERROR)
 		}
 		//emailExists, _ := config.db.CheckEmailUniqueness(c.Request().Context(), email)
 		//
@@ -624,7 +636,7 @@ func (config *Config) checkExamTitle(c echo.Context) error {
 	e := v.ValidateJSON()
 
 	if len(e) > 0 {
-		return validationError(c, e)
+		return validationError(c, e, types.GENERIC_VALIDATION_ERROR)
 	}
 
 	authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
@@ -634,9 +646,10 @@ func (config *Config) checkExamTitle(c echo.Context) error {
 		UserID: authenticatedUser.ID,
 	})
 	if examTitleExists {
-		return validationError(c, map[string]interface{}{
+		vError := map[string]string{
 			"exam_title": "You already have an exam with this title.",
-		})
+		}
+		return validationError(c, formatCustomValidationError(vError), types.GENERIC_VALIDATION_ERROR)
 	}
 
 	return c.NoContent(http.StatusOK)
@@ -660,14 +673,15 @@ func (config *Config) checkExamQuestions(c echo.Context) error {
 	e := v.ValidateJSON()
 
 	if len(e) > 0 {
-		return validationError(c, e)
+		return validationError(c, e, types.GENERIC_VALIDATION_ERROR)
 	}
 
 	isCorrect, questionErrors := validations.ValidateQuestions(examSchema.Questions...)
 	if !isCorrect {
-		return validationError(c, map[string]interface{}{
+		vError := map[string]interface{}{
 			"questions": questionErrors,
-		})
+		}
+		return validationError(c, vError, types.QUESTIONS_VALIDATION_ERROR)
 	}
 
 	return c.NoContent(http.StatusOK)

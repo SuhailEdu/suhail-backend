@@ -51,16 +51,23 @@ func (config *Config) loginUser(c echo.Context) error {
 
 	if len(e) > 0 {
 
-		return validationError(c, e)
+		return validationError(c, e, types.GENERIC_VALIDATION_ERROR)
 	}
 
 	user, err := config.db.GetUserByEmail(c.Request().Context(), userInput.Email)
+
 	if err != nil {
-		return validationError(c, map[string]any{"email": []string{"Incorrect credentials"}})
+		vError := map[string]string{
+			"email": "البريد الالكتروني أو كلمة السر لا تطابق سجلاتنا",
+		}
+		return validationError(c, formatCustomValidationError(vError), types.GENERIC_VALIDATION_ERROR)
 	}
 
 	if err := bcrypt.CompareHashAndPassword(user.Password, []byte(userInput.Password)); err != nil {
-		return validationError(c, map[string]any{"email": []string{"Incorrect credentials"}})
+		vError := map[string]string{
+			"email": "البريد الالكتروني أو كلمة السر لا تطابق سجلاتنا",
+		}
+		return validationError(c, formatCustomValidationError(vError), types.GENERIC_VALIDATION_ERROR)
 	}
 
 	authToken, err := createUserToken(user, c, config)
@@ -97,15 +104,14 @@ func (config *Config) registerUser(c echo.Context) error {
 		//err := map[string]interface{}{"validationError": e}
 		// Validate the User struct
 		// Validation failed, handle the error
-		return validationError(c, e)
+		return validationError(c, e, types.GENERIC_VALIDATION_ERROR)
 	}
 
 	if checkEmailIsUnique(c, *config, userInput.Email) {
 
-		emailError := map[string]interface{}{"email": []string{"Email is already taken"}}
+		emailError := map[string]string{"email": "Email is already taken"}
 
-		err := map[string]interface{}{"validationError": emailError}
-		return validationError(c, err)
+		return validationError(c, formatCustomValidationError(emailError), types.GENERIC_VALIDATION_ERROR)
 	}
 
 	log.Println(userInput)

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/labstack/echo/v4"
 	"log"
 	"net/http"
@@ -21,10 +22,23 @@ func badRequestError(c echo.Context, err error) error {
 	return c.JSON(http.StatusBadRequest, map[string]string{"error": "Your request is invalid"})
 }
 
-func validationError(c echo.Context, err interface{}) error {
+func validationError(c echo.Context, err interface{}, validationCode string) error {
 
-	errors := map[string]interface{}{"validationError": err}
+	errors := map[string]interface{}{
+		"validation_errors": err,
+		"validation_code":   validationCode,
+	}
 	return c.JSON(http.StatusUnprocessableEntity, errors)
+}
+func formatCustomValidationError(customError map[string]string) map[string][]string {
+	var errors = make(map[string][]string)
+
+	for k, v := range customError {
+		fmt.Println(k, v)
+		errors[k] = []string{v}
+	}
+	return errors
+
 }
 func unAuthorizedError(c echo.Context, err interface{}) error {
 
