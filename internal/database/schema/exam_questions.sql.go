@@ -128,7 +128,6 @@ const getExamQuestions = `-- name: GetExamQuestions :many
 SELECT id, exam_id, question, answers, type, created_at, updated_at
 FROM exam_questions
 WHERE exam_id = $1
-LIMIT 1
 `
 
 func (q *Queries) GetExamQuestions(ctx context.Context, examID uuid.UUID) ([]ExamQuestion, error) {

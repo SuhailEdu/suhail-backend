@@ -47,7 +47,6 @@ WHERE exam_questions.id = $1
 SELECT *
 FROM exam_questions
 WHERE exam_id = $1
-LIMIT 1
 ;
 
 -- name: GetExamIPRangesByQuestionId :one
