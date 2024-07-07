@@ -48,7 +48,16 @@ FROM exams
 WHERE user_id = $1;
 
 -- name: CheckExamTitleExists :one
-SELECT EXISTS(SELECT 1 FROM exams WHERE title = $1 AND user_id = $2);
+SELECT EXISTS(SELECT 1
+              FROM exams
+              WHERE title = $1
+                AND user_id = $2
+                AND (@id::uuid is null or id != @id::uuid)
+
+
+--                 AND id != CASE WHEN @id::string THEN @id::string ELSE id END
+--                                   AND (case when @except::uuid then where id != @except::uuid)
+);
 
 
 -- name: FindMyExam :one

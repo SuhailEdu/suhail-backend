@@ -13,16 +13,28 @@ import (
 )
 
 const checkExamTitleExists = `-- name: CheckExamTitleExists :one
-SELECT EXISTS(SELECT 1 FROM exams WHERE title = $1 AND user_id = $2)
+SELECT EXISTS(SELECT 1
+              FROM exams
+              WHERE title = $1
+                AND user_id = $2
+
+                AND ($3::uuid is null or id != $3::uuid)
+
+
+)
 `
 
 type CheckExamTitleExistsParams struct {
 	Title  string
 	UserID uuid.UUID
+	ID     uuid.UUID
 }
 
+// AND id != CASE WHEN @id::string THEN @id::string ELSE id END
+//
+//	AND (case when @except::uuid then where id != @except::uuid)
 func (q *Queries) CheckExamTitleExists(ctx context.Context, arg CheckExamTitleExistsParams) (bool, error) {
-	row := q.db.QueryRow(ctx, checkExamTitleExists, arg.Title, arg.UserID)
+	row := q.db.QueryRow(ctx, checkExamTitleExists, arg.Title, arg.UserID, arg.ID)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err

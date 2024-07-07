@@ -198,6 +198,22 @@ func (config *Config) updateExam(c echo.Context) error {
 		return validationError(c, e, types.GENERIC_VALIDATION_ERROR)
 	}
 
+	authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
+
+	examTitleExists, _ := config.db.CheckExamTitleExists(c.Request().Context(), schema.CheckExamTitleExistsParams{
+		Title:  examSchema.ExamTitle,
+		UserID: authenticatedUser.ID,
+		ID:     examId,
+		//ExceptID:
+	})
+	if examTitleExists {
+		vError := map[string]string{
+			"exam_title": "لديك اختبار بالفعل بنفس الاسم",
+		}
+		return validationError(c, formatCustomValidationError(vError), types.GENERIC_VALIDATION_ERROR)
+
+	}
+
 	updateParams := schema.UpdateExamParams{
 		ID:               examId,
 		Title:            examSchema.ExamTitle,
