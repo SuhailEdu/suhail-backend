@@ -22,7 +22,7 @@ func ValidateQuestions(questionsInput ...types.QuestionInput) (bool, interface{}
 			return false, QuestionValidationResponse{
 				QuestionIndex:   i,
 				IsQuestionError: true,
-				Message:         "question has no title",
+				Message:         "لا يحتوي هذا السؤال على عنوان",
 			}
 		}
 
@@ -31,7 +31,7 @@ func ValidateQuestions(questionsInput ...types.QuestionInput) (bool, interface{}
 			return false, QuestionValidationResponse{
 				QuestionIndex:   i,
 				IsQuestionError: true,
-				Message:         "question title should be at least 5 characters",
+				Message:         "يجب أن يحتوي عنوان السؤال على 5 أحرف كحد أدني",
 			}
 		}
 
@@ -39,7 +39,7 @@ func ValidateQuestions(questionsInput ...types.QuestionInput) (bool, interface{}
 			return false, QuestionValidationResponse{
 				QuestionIndex:   i,
 				IsQuestionError: true,
-				Message:         "question title should be less than 60 characters",
+				Message:         "يجب أن لا يتجاوز عنوان السؤال 255 حرف كحد أقصى",
 			}
 		}
 
@@ -48,7 +48,7 @@ func ValidateQuestions(questionsInput ...types.QuestionInput) (bool, interface{}
 			return false, QuestionValidationResponse{
 				QuestionIndex:   i,
 				IsQuestionError: true,
-				Message:         "question type must be 'options' or 'yesOrNo'",
+				Message:         "يحب أن يكون نوع السؤال  اختبارات او صخ و خطأ",
 			}
 
 		}
@@ -75,7 +75,7 @@ func ValidateQuestions(questionsInput ...types.QuestionInput) (bool, interface{}
 			return false, QuestionValidationResponse{
 				QuestionIndex:   i,
 				IsQuestionError: true,
-				Message:         "Question option titles must be unique",
+				Message:         "يحب أن تكون لا تتكرر الاختيارات",
 			}
 		}
 	}
@@ -88,7 +88,9 @@ func ValidateQuestions(questionsInput ...types.QuestionInput) (bool, interface{}
 	}
 
 	if !isSliceUnique(titles) {
-		return false, "question titles must be unique"
+		return false, map[string]string{
+			"exam_title": "لديك اختبار بالفعل بهذا العنوان",
+		}
 	}
 
 	return true, nil
