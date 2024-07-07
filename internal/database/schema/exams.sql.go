@@ -17,7 +17,6 @@ SELECT EXISTS(SELECT 1
               FROM exams
               WHERE title = $1
                 AND user_id = $2
-
                 AND ($3::uuid is null or id != $3::uuid)
 
 
@@ -81,7 +80,7 @@ func (q *Queries) CreateExam(ctx context.Context, arg CreateExamParams) (Exam, e
 
 const deleteExam = `-- name: DeleteExam :exec
 DELETE
-FROM exam_questions
+FROM exams
 WHERE id = $1
 `
 

@@ -82,5 +82,5 @@ WHERE exam_participants.user_id = $1
 
 -- name: DeleteExam :exec
 DELETE
-FROM exam_questions
+FROM exams
 WHERE id = $1;
