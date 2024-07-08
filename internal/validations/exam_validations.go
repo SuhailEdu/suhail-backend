@@ -26,7 +26,7 @@ func ValidateQuestions(questionsInput ...types.QuestionInput) (bool, interface{}
 			}
 		}
 
-		if len(question.Title) < 5 {
+		if len(question.Title) < 3 {
 
 			return false, QuestionValidationResponse{
 				QuestionIndex:   i,
@@ -35,7 +35,7 @@ func ValidateQuestions(questionsInput ...types.QuestionInput) (bool, interface{}
 			}
 		}
 
-		if len(question.Title) > 60 {
+		if len(question.Title) > 255 {
 			return false, QuestionValidationResponse{
 				QuestionIndex:   i,
 				IsQuestionError: true,
@@ -48,7 +48,7 @@ func ValidateQuestions(questionsInput ...types.QuestionInput) (bool, interface{}
 			return false, QuestionValidationResponse{
 				QuestionIndex:   i,
 				IsQuestionError: true,
-				Message:         "يحب أن يكون نوع السؤال  اختبارات او صخ و خطأ",
+				Message:         "يحب أن يكون نوع السؤال  اختيارات او صح و خطأ",
 			}
 
 		}
@@ -148,7 +148,7 @@ func validateOptionsQuestions(questionInputs ...types.QuestionInput) (bool, inte
 				}
 			}
 
-			if len(option.Option) < 3 {
+			if len(option.Option) < 1 {
 
 				return false, QuestionValidationResponse{
 					QuestionIndex:   i,
@@ -158,7 +158,7 @@ func validateOptionsQuestions(questionInputs ...types.QuestionInput) (bool, inte
 				}
 			}
 
-			if len(option.Option) > 60 {
+			if len(option.Option) > 255 {
 				return false, QuestionValidationResponse{
 					QuestionIndex:   i,
 					IsQuestionError: false,

@@ -178,7 +178,7 @@ func (config *Config) updateExam(c echo.Context) error {
 	var examSchema types.UpdateExamInput
 
 	rules := govalidator.MapData{
-		"exam_title":     []string{"required", "min:4", "max:30"},
+		"exam_title":     []string{"required", "min:5", "max:255"},
 		"status":         []string{"required", "in:public,private"},
 		"ip_range_start": []string{"ip_v4"},
 		"ip_range_end":   []string{"ip_v4"},
