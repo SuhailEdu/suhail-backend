@@ -67,3 +67,11 @@ type User struct {
 	CreatedAt       pgtype.Timestamp
 	UpdatedAt       pgtype.Timestamp
 }
+
+type VerificationCode struct {
+	Hash      []byte
+	UserID    uuid.UUID
+	Scope     string
+	Expiry    pgtype.Timestamp
+	CreatedAt pgtype.Timestamp
+}

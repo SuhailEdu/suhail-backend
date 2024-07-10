@@ -7,6 +7,8 @@ package schema
 
 import (
 	"context"
+
+	"github.com/google/uuid"
 )
 
 const checkEmailUniqueness = `-- name: CheckEmailUniqueness :one
@@ -75,4 +77,15 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const verifyUserEmail = `-- name: VerifyUserEmail :exec
+UPDATE users
+SET email_verified_at = now()
+WHERE id = $1
+`
+
+func (q *Queries) VerifyUserEmail(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, verifyUserEmail, id)
+	return err
 }

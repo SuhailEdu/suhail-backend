@@ -260,7 +260,7 @@ func (config *Config) deleteExam(c echo.Context) error {
 		return serverError(c, err)
 	}
 
-	return c.NoContent(http.StatusNoContent)
+	return c.NoContent(http.StatusOK)
 
 }
 func (config *Config) updateQuestion(c echo.Context) error {
@@ -480,7 +480,7 @@ func (config *Config) deleteQuestion(c echo.Context) error {
 		ID_2:   examId,
 	})
 
-	return c.JSON(http.StatusNoContent, nil)
+	return c.JSON(http.StatusOK, nil)
 
 }
 

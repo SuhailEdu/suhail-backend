@@ -11,6 +11,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/olahol/melody v1.2.1
 	github.com/thedevsaddam/govalidator v1.9.10
+	github.com/wneessen/go-mail v0.4.2
 	golang.org/x/crypto v0.24.0
 )
 

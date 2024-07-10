@@ -43,6 +43,7 @@ func main() {
 	config := &Config{
 		db:     queries,
 		melody: m,
+		logger: log.New(os.Stdout, "", log.LstdFlags),
 	}
 	e := echo.New()
 

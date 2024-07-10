@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base32"
+	"errors"
 	"fmt"
 	"github.com/SuhailEdu/suhail-backend/internal/database/schema"
 	"github.com/SuhailEdu/suhail-backend/internal/types"
@@ -75,6 +77,9 @@ func (config *Config) loginUser(c echo.Context) error {
 	if err != nil {
 		return serverError(c, err)
 	}
+
+	childCon := context.WithoutCancel(c.Request().Context())
+	go sendWelcomeEmail(user, childCon, config)
 
 	return c.JSON(http.StatusOK, types.SerializeUserResource(user, authToken))
 }
@@ -151,7 +156,46 @@ func (config *Config) logout(c echo.Context) error {
 		return serverError(c, err)
 	}
 
-	return c.NoContent(http.StatusNoContent)
+	return c.NoContent(http.StatusOK)
+
+}
+
+func (config *Config) verifyEmail(c echo.Context) error {
+
+	authenticatedUser := c.Get("user").(schema.GetUserByTokenRow)
+	userId := authenticatedUser.ID
+
+	token := c.QueryParam("token")
+
+	if token == "" {
+		return badRequestError(c, errors.New("token required"))
+	}
+
+	tokenHash := sha256.Sum256([]byte(token))
+
+	isValid, err := config.db.CheckCodeValidity(c.Request().Context(), tokenHash[:])
+
+	if err != nil {
+		return serverError(c, err)
+	}
+
+	if !isValid {
+		return badRequestError(c, errors.New("token invalid or expired"))
+	}
+
+	err = config.db.DeleteVerificationCode(c.Request().Context(), tokenHash[:])
+
+	if err != nil {
+		return serverError(c, err)
+	}
+
+	err = config.db.VerifyUserEmail(c.Request().Context(), userId)
+
+	if err != nil {
+		return serverError(c, err)
+	}
+
+	return c.NoContent(http.StatusOK)
 
 }
 
@@ -189,5 +233,4 @@ func createUserToken(user schema.User, c echo.Context, config *Config) (string, 
 		return "", err
 	}
 	return plainText, nil
-
 }

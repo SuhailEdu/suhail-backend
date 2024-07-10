@@ -11,6 +11,7 @@ func registerApiRoutes(e *echo.Echo, config *Config) {
 
 	authGroup.POST("/register", config.registerUser)
 	authGroup.POST("/login", config.loginUser)
+	authGroup.POST("/verify-email", config.verifyEmail)
 
 	homeGroup := e.Group("/home")
 	homeGroup.Use(config.checkAuthToken)
