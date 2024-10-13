@@ -79,7 +79,7 @@ func (config *Config) createExam(c echo.Context) error {
 	var examSchema types.ExamInput
 
 	rules := govalidator.MapData{
-		"exam_title": []string{"required", "min:4", "max:30"},
+		"exam_title": []string{"required", "min:4", "max:255"},
 		"status":     []string{"required", "in:public,private"},
 		"questions":  []string{"required"},
 	}
@@ -639,7 +639,7 @@ func (config *Config) checkExamTitle(c echo.Context) error {
 	var examSchema types.ExamInput
 
 	rules := govalidator.MapData{
-		"exam_title": []string{"required", "min:4", "max:30"},
+		"exam_title": []string{"required", "min:4", "max:255"},
 	}
 
 	opts := govalidator.Options{

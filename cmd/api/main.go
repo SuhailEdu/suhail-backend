@@ -55,5 +55,7 @@ func main() {
 
 	registerApiRoutes(e, config)
 
-	e.Logger.Fatal(e.Start(":4000"))
+	appPort := os.Getenv("APP_PORT")
+
+	e.Logger.Fatal(e.Start(":" + appPort))
 }
