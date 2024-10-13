@@ -16,6 +16,12 @@ import (
 
 func sendWelcomeEmail(user schema.User, c context.Context, config *Config) {
 
+	// Load your credentials
+	from := "youremail@domain.com"
+	host := "smtp.zoho.com"
+	username := "username"
+	password := "secret"
+
 	url, err := createVerificationUrl(user, c, config)
 	if err != nil {
 		config.logger.Fatal(err)
@@ -39,7 +45,7 @@ func sendWelcomeEmail(user schema.User, c context.Context, config *Config) {
 	}
 
 	m := mail.NewMsg()
-	if err := m.From("no-reply@rafiqi-uk.com"); err != nil {
+	if err := m.From(from); err != nil {
 		config.logger.Fatalf("failed to set From address: %s", err)
 		return
 	}
@@ -51,8 +57,8 @@ func sendWelcomeEmail(user schema.User, c context.Context, config *Config) {
 	m.Subject("مرحبا في في سهيل !")
 	m.SetBodyString(mail.TypeTextHTML, parsedTmpl.String())
 
-	client, err := mail.NewClient("smtp.zoho.com", mail.WithSSL(), mail.WithPort(465), mail.WithSMTPAuth(mail.SMTPAuthLogin),
-		mail.WithUsername("no-reply@rafiqi-uk.com"), mail.WithPassword("rqbTaPpJdBwM1R9A@"))
+	client, err := mail.NewClient(host, mail.WithSSL(), mail.WithPort(465), mail.WithSMTPAuth(mail.SMTPAuthLogin),
+		mail.WithUsername(username), mail.WithPassword(password))
 	if err != nil {
 
 		config.logger.Fatalf("failed to create mail client: %s", err)
